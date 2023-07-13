@@ -253,53 +253,107 @@
     }
 
     function generateReport() {
-      var employeeSelect = document.getElementById("employee-select");
-      var selectedEmployeeId = employeeSelect.value;
-      var employeeReport = document.getElementById("employee-report");
-      employeeReport.innerHTML = "";
+  var employeeSelect = document.getElementById("employee-select");
+  var selectedEmployeeId = employeeSelect.value;
+  var employeeReport = document.getElementById("employee-report");
+  employeeReport.innerHTML = "";
 
-      if (selectedEmployeeId) {
-        var punchesFiltered = punches.filter(function (punch) {
-          return punch.employeeId === selectedEmployeeId;
-        });
+  if (selectedEmployeeId) {
+    var punchesFiltered = punches.filter(function(punch) {
+      return punch.employeeId === selectedEmployeeId;
+    });
 
-        var table = document.createElement("table");
-        table.classList.add("report-table");
+    var table = document.createElement("table");
+    table.classList.add("report-table");
 
-        var headerRow = document.createElement("tr");
-        var headers = ["Data", "Entrada manhã", "Saída manhã", "Entrada tarde", "Saída tarde", "Hora Extra"];
+    var headerRow = document.createElement("tr");
+    var headers = ["Data", "Entrada", "Saída Almoço", "Entrada Almoço", "Saída Final", "Extra", "Horas Trabalhadas"];
 
-        headers.forEach(function (headerText) {
-          var headerCell = document.createElement("th");
-          headerCell.textContent = headerText;
-          headerRow.appendChild(headerCell);
-        });
+    headers.forEach(function(headerText) {
+      var headerCell = document.createElement("th");
+      headerCell.textContent = headerText;
+      headerRow.appendChild(headerCell);
+    });
 
-        table.appendChild(headerRow);
+    table.appendChild(headerRow);
 
-        punchesFiltered.forEach(function (punch) {
-          var row = document.createElement("tr");
-          var cells = [
-            punch.date,
-            punch.punchType === "entrada" ? punch.time : "-",
-            punch.punchType === "saida_almoco" ? punch.time : "-",
-            punch.punchType === "entrada_almoco" ? punch.time : "-",
-            punch.punchType === "saida_final" || punch.punchType === "saida" ? punch.time : "-",
-            punch.extra || "-"
-          ];
+    var totalHoursWorked = 0;
+    punchesFiltered.forEach(function(punch) {
+      var row = document.createElement("tr");
+      var cells = [
+        punch.date,
+        punch.punchType === "entrada" ? punch.time : "-",
+        punch.punchType === "saida_almoco" ? punch.time : "-",
+        punch.punchType === "entrada_almoco" ? punch.time : "-",
+        punch.punchType === "saida_final" || punch.punchType === "saida" ? punch.time : "-",
+        punch.extra || "-",
+        punch.hoursWorked || "-"
+      ];
 
-          cells.forEach(function (cellText) {
-            var cell = document.createElement("td");
-            cell.textContent = cellText;
-            row.appendChild(cell);
-          });
+      cells.forEach(function(cellText) {
+        var cell = document.createElement("td");
+        cell.textContent = cellText;
+        row.appendChild(cell);
+      });
 
-          table.appendChild(row);
-        });
+      table.appendChild(row);
 
-        employeeReport.appendChild(table);
+      if (punch.hoursWorked) {
+        totalHoursWorked += punch.hoursWorked;
       }
+    });
+
+    employeeReport.appendChild(table);
+
+    var totalHoursWorkedElement = document.createElement("div");
+    totalHoursWorkedElement.textContent = "Total de Horas Trabalhadas: " + totalHoursWorked.toFixed(2) + " horas";
+    employeeReport.appendChild(totalHoursWorkedElement);
+  }
+}
+
+function calculateExtraTime(punches, employee) {
+  var totalExtraTime = 0;
+  var totalHoursWorked = 0;
+  var punchesFiltered = punches.filter(function(punch) {
+    return punch.employeeId === employee.id;
+  });
+
+  var punchInTimes = [];
+  var punchOutTimes = [];
+
+  punchesFiltered.forEach(function(punch) {
+    if (punch.punchType === "entrada") {
+      punchInTimes.push(new Date(punch.date + " " + punch.time));
+    } else if (punch.punchType === "saida_final" || punch.punchType === "saida") {
+      punchOutTimes.push(new Date(punch.date + " " + punch.time));
     }
+  });
+
+  for (var i = 0; i < punchInTimes.length; i++) {
+    var punchInTime = punchInTimes[i];
+    var punchOutTime = punchOutTimes[i];
+
+    if (punchInTime && punchOutTime) {
+      var timeDiff = punchOutTime - punchInTime;
+      var extraTime = timeDiff - (employee.jornada * 3600000);
+      var hoursWorked = timeDiff / 3600000;
+
+      if (extraTime > 0) {
+        totalExtraTime += extraTime;
+      }
+
+      totalHoursWorked += hoursWorked;
+
+      punchesFiltered[i].hoursWorked = hoursWorked.toFixed(2);
+    }
+  }
+
+  return {
+    totalExtraTime: totalExtraTime,
+    totalHoursWorked: totalHoursWorked
+  };
+}
+
 function calculateExtraTime(punches, employee) {
   var totalExtraTime = 0;
   var punchesFiltered = punches.filter(function(punch) {
@@ -417,3 +471,5 @@ function calculateExtraTime(punches, employee) {
 </body>
 
 </html>
+
+
