@@ -41,7 +41,7 @@
       border: 1px solid #000;
     }
 
-    #employee-id{
+    #employee-id {
 
       padding: 10px;
       border-radius: 5px;
@@ -89,17 +89,23 @@
       left: 50%;
       transform: translate(-50%, -50%);
       z-index: 9999;
-      width: 2cm;
-      height: 2cm;
+      width: 10cm;
+      height: 10cm;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
       overflow: hidden;
     }
 
     .checkmark-wrapper img {
-      max-width: 100%;
-      max-height: 100%;
+      max-width: 20%;
+      max-height: 70%;
+    }
+
+    .checkmark-wrapper span {
+      font-size: 20px;
+      margin-top: 10px;
     }
   </style>
 </head>
@@ -117,7 +123,7 @@
     <select id="employee-select" onchange="generateReport()">
       <option value="">Selecione um colaborador</option>
       <option value="11118">Welton Alfa Esteves</option>
-      <option value="002">Colaborador 2</option>
+      <option value="002">Jessica Freitas</option>
     </select><br>
     <div id="employee-report"></div>
     <button onclick="generatePDF()">Gerar PDF</button>
@@ -125,15 +131,18 @@
   </div>
 
 
+  <!-- Container da imagem do checkmark -->
   <div id="checkmark-wrapper" class="checkmark-wrapper" style="display: none;">
-    <img id="checkmark-image" src="https://imagepng.org/wp-content/uploads/2019/12/check-icone-3.png">
+    <img id="checkmark-image" src="https://imagepng.org/wp-content/uploads/2019/12/check-icone-3.png" alt="Checkmark">
+    <span id="checkmark-text"></span>
   </div>
-  
+
+
 
   <script>
     var employees = [
-      { id: "11118", name: "Welton Alfa Esteves", jornada: 8 },
-      { id: "002", name: "Colaborador 2", jornada: 8 },
+      { id: "11118", name: "Welton Alfa Esteves", jornada: 8.48 },
+      { id: "002", name: "Jessica Freitas", jornada: 8.48 },
     ];
 
     var punches = [];
@@ -174,7 +183,7 @@
           localStorage.setItem("punches", JSON.stringify(punches));
           document.getElementById("employee-id").value = "";
 
-          showCheckmark();
+          showCheckmark(employee.name);
           generateReport();
         } else {
           alert("Colaborador não encontrado. Verifique o código de matrícula digitado.");
@@ -227,13 +236,16 @@
       }
     }
 
-    function showCheckmark() {
-      var checkmarkElement = document.createElement("div");
-      checkmarkElement.classList.add("checkmark");
-      document.body.appendChild(checkmarkElement);
+    function showCheckmark(employeeName) {
+      var checkmarkWrapper = document.getElementById("checkmark-wrapper");
+      var checkmarkImage = document.getElementById("checkmark-image");
+      var checkmarkText = document.getElementById("checkmark-text");
+
+      checkmarkText.innerText = employeeName;
+      checkmarkWrapper.style.display = "flex";
 
       setTimeout(function () {
-        document.body.removeChild(checkmarkElement);
+        checkmarkWrapper.style.display = "none";
       }, 3000);
     }
 
@@ -378,18 +390,18 @@
       localStorage.removeItem("punches");
       generateReport();
     }
-
-    function showCheckmark() {
+    function showCheckmark(employeeName) {
       var checkmarkWrapper = document.getElementById("checkmark-wrapper");
+      var checkmarkImage = document.getElementById("checkmark-image");
+      var checkmarkText = document.getElementById("checkmark-text");
+
+      checkmarkText.innerText = employeeName;
       checkmarkWrapper.style.display = "flex";
 
-      setTimeout(function() {
+      setTimeout(function () {
         checkmarkWrapper.style.display = "none";
       }, 3000);
     }
-
-
-    
   </script>
 </body>
 
