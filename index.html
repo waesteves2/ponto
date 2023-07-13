@@ -83,7 +83,7 @@
       margin-top: 10px;
     }
 
-    .checkmark-wrapper {
+     .checkmark-wrapper {
       position: fixed;
       top: 50%;
       left: 50%;
@@ -123,20 +123,18 @@
     <select id="employee-select" onchange="generateReport()">
       <option value="">Selecione um colaborador</option>
       <option value="11118">Welton Alfa Esteves</option>
-      <option value="002">Jessica Freitas</option>
+      <option value="002">Colaborador 2</option>
     </select><br>
     <div id="employee-report"></div>
     <button onclick="generatePDF()">Gerar PDF</button>
     <button id="reset-button" onclick="resetPunches()">Resetar</button>
   </div>
 
-
-  <!-- Container da imagem do checkmark -->
+ <!-- Container da imagem do checkmark -->
   <div id="checkmark-wrapper" class="checkmark-wrapper" style="display: none;">
     <img id="checkmark-image" src="https://imagepng.org/wp-content/uploads/2019/12/check-icone-3.png" alt="Checkmark">
     <span id="checkmark-text"></span>
   </div>
-
 
 
   <script>
@@ -264,7 +262,7 @@
         table.classList.add("report-table");
 
         var headerRow = document.createElement("tr");
-        var headers = ["Data", "Entrada", "Saída Almoço", "Entrada Almoço", "Saída Final", "Extra"];
+        var headers = ["Data", "Entrada manhã", "Saída manhã", "Entrada tarde", "Saída tarde", "Hora Extra"];
 
         headers.forEach(function (headerText) {
           var headerCell = document.createElement("th");
@@ -366,7 +364,7 @@
       });
 
       doc.autoTable({
-        head: [["Data", "Entrada", "Saída Almoço", "Entrada Almoço", "Saída Final", "Extra"]],
+        head: [["Data", "Entrada manhã", "Saída manhã", "Entrada tarde", "Saída tarde", "Hora Extra"]],
         body: tableData,
         startY: 90,
         theme: "plain"
@@ -390,7 +388,8 @@
       localStorage.removeItem("punches");
       generateReport();
     }
-    function showCheckmark(employeeName) {
+
+ function showCheckmark(employeeName) {
       var checkmarkWrapper = document.getElementById("checkmark-wrapper");
       var checkmarkImage = document.getElementById("checkmark-image");
       var checkmarkText = document.getElementById("checkmark-text");
@@ -406,3 +405,5 @@
 </body>
 
 </html>
+
+
