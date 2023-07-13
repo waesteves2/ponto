@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+  <title>Sistema de Controle de Ponto</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.3/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    #punch-in-out {
+      text-align: center;
+    }
+
+    #punch-in-out input {
+      margin-top: 10px;
+    }
+
+    #report {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    #report table {
+      margin: 0 auto;
+      border-collapse: collapse;
+    }
+
+    #report table th,
+    #report table td {
+      padding: 5px;
+      border: 1px solid #000;
+    }
+
+    #employee-id{
+
+      padding: 10px;
+      border-radius: 5px;
+    }
+
+    .checkmark {
+      display: inline-block;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 2px solid #000;
+      background-color: #2ecc71;
+      animation: checkmark 3s linear;
+    }
+
+    @keyframes checkmark {
+      0% {
+        transform: scale(0);
+        opacity: 0;
+      }
+
+      50% {
+        transform: scale(1.2);
+        opacity: 1;
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 0;
+      }
+    }
+
+    #employee-report {
+      text-align: center;
+      font-size: 18px;
+    }
+
+    #reset-button {
+      margin-top: 10px;
+    }
+
+    .checkmark-wrapper {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 9999;
+      width: 2cm;
+      height: 2cm;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    .checkmark-wrapper img {
+      max-width: 100%;
+      max-height: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Ponto</h1>
+
+  <div id="punch-in-out">
+    <label for="employee-id">Código de Matrícula:</label><br>
+    <input type="text" id="employee-id" autofocus onkeydown="registerPunch(event)">
+  </div>
+
+  <div id="report">
+    <h2>Folha de Ponto</h2>
+    <select id="employee-select" onchange="generateReport()">
+      <option value="">Selecione um colaborador</option>
+      <option value="11118">Welton Alfa Esteves</option>
+      <option value="002">Colaborador 2</option>
+    </select><br>
+    <div id="employee-report"></div>
+    <button onclick="generatePDF()">Gerar PDF</button>
+    <button id="reset-button" onclick="resetPunches()">Resetar</button>
+  </div>
+
+
+  <div id="checkmark-wrapper" class="checkmark-wrapper" style="display: none;">
+    <img id="checkmark-image" src="https://imagepng.org/wp-content/uploads/2019/12/check-icone-3.png">
+  </div>
+  
+
+  <script>
+    var employees = [
+      { id: "11118", name: "Welton Alfa Esteves", jornada: 8 },
+      { id: "002", name: "Colaborador 2", jornada: 8 },
+    ];
+
+    var punches = [];
+
+    if (typeof Storage !== "undefined") {
+      var punchesData = localStorage.getItem("punches");
+      if (punchesData) {
+        punches = JSON.parse(punchesData);
+      }
+    } else {
+      alert("Seu navegador não suporta o recurso de Local Storage. Por favor, atualize-o.");
+    }
+
+    function registerPunch(event) {
+      if (event.keyCode === 13) {
+        var employeeId = document.getElementById("employee-id").value;
+        var employee = getEmployeeById(employeeId);
+
+        if (employee) {
+          var date = new Date().toLocaleDateString();
+          var time = new Date().toLocaleTimeString();
+
+          var punchType = getPunchType(time);
+          var lastPunch = getLastPunch(employeeId);
+
+          if (lastPunch && lastPunch.date === date) {
+            punches.splice(punches.indexOf(lastPunch), 1);
+          }
+
+          punches.push({
+            employeeId: employeeId,
+            employeeName: employee.name,
+            date: date,
+            time: time,
+            punchType: punchType
+          });
+
+          localStorage.setItem("punches", JSON.stringify(punches));
+          document.getElementById("employee-id").value = "";
+
+          showCheckmark();
+          generateReport();
+        } else {
+          alert("Colaborador não encontrado. Verifique o código de matrícula digitado.");
+        }
+      }
+    }
+
+    function getEmployeeById(employeeId) {
+      return employees.find(function (employee) {
+        return employee.id === employeeId;
+      });
+    }
+
+    function getPunchType(time) {
+      var hour = parseInt(time.split(":")[0]);
+      var minutes = parseInt(time.split(":")[1]);
+
+      if (hour < 7 || (hour === 7 && minutes < 30)) {
+        return "entrada";
+      } else if (hour >= 7 && hour < 9) {
+        return "entrada";
+      } else if (hour === 9 && minutes <= 0) {
+        return "entrada";
+      } else if (hour >= 11 && hour < 13) {
+        return "saida_almoco";
+      } else if (hour === 13 && minutes < 20) {
+        return "saida_almoco";
+      } else if (hour === 13 && minutes >= 20) {
+        return "entrada_almoco";
+      } else if (hour > 13 && hour < 15) {
+        return "entrada_almoco";
+      } else if (hour === 15 && minutes <= 30) {
+        return "entrada_almoco";
+      } else if (hour >= 17 && hour < 20) {
+        return "saida_final";
+      } else {
+        return "saida";
+      }
+    }
+
+    function getLastPunch(employeeId) {
+      var punchesFiltered = punches.filter(function (punch) {
+        return punch.employeeId === employeeId;
+      });
+
+      if (punchesFiltered.length > 0) {
+        return punchesFiltered[punchesFiltered.length - 1];
+      } else {
+        return null;
+      }
+    }
+
+    function showCheckmark() {
+      var checkmarkElement = document.createElement("div");
+      checkmarkElement.classList.add("checkmark");
+      document.body.appendChild(checkmarkElement);
+
+      setTimeout(function () {
+        document.body.removeChild(checkmarkElement);
+      }, 3000);
+    }
+
+    function generateReport() {
+      var employeeSelect = document.getElementById("employee-select");
+      var selectedEmployeeId = employeeSelect.value;
+      var employeeReport = document.getElementById("employee-report");
+      employeeReport.innerHTML = "";
+
+      if (selectedEmployeeId) {
+        var punchesFiltered = punches.filter(function (punch) {
+          return punch.employeeId === selectedEmployeeId;
+        });
+
+        var table = document.createElement("table");
+        table.classList.add("report-table");
+
+        var headerRow = document.createElement("tr");
+        var headers = ["Data", "Entrada", "Saída Almoço", "Entrada Almoço", "Saída Final", "Extra"];
+
+        headers.forEach(function (headerText) {
+          var headerCell = document.createElement("th");
+          headerCell.textContent = headerText;
+          headerRow.appendChild(headerCell);
+        });
+
+        table.appendChild(headerRow);
+
+        punchesFiltered.forEach(function (punch) {
+          var row = document.createElement("tr");
+          var cells = [
+            punch.date,
+            punch.punchType === "entrada" ? punch.time : "-",
+            punch.punchType === "saida_almoco" ? punch.time : "-",
+            punch.punchType === "entrada_almoco" ? punch.time : "-",
+            punch.punchType === "saida_final" || punch.punchType === "saida" ? punch.time : "-",
+            punch.extra || "-"
+          ];
+
+          cells.forEach(function (cellText) {
+            var cell = document.createElement("td");
+            cell.textContent = cellText;
+            row.appendChild(cell);
+          });
+
+          table.appendChild(row);
+        });
+
+        employeeReport.appendChild(table);
+      }
+    }
+
+    function calculateExtraTime(punches, employee) {
+      var totalExtraTime = 0;
+      var punchesFiltered = punches.filter(function (punch) {
+        return punch.employeeId === employee.id;
+      });
+
+      for (var i = 0; i < punchesFiltered.length; i += 2) {
+        var punchIn = punchesFiltered[i];
+        var punchOut = punchesFiltered[i + 1];
+
+        if (punchIn && punchOut) {
+          var punchInTime = new Date(punchIn.date + " " + punchIn.time);
+          var punchOutTime = new Date(punchOut.date + " " + punchOut.time);
+          var timeDiff = punchOutTime - punchInTime;
+          var extraTime = timeDiff - (employee.jornada * 3600000);
+
+          if (extraTime > 0) {
+            punchesFiltered[i].extra = formatTime(extraTime);
+            punchesFiltered[i + 1].extra = formatTime(extraTime);
+            totalExtraTime += extraTime;
+          }
+        }
+      }
+
+      return totalExtraTime;
+    }
+
+    function formatTime(time) {
+      var hours = Math.floor(time / 3600000);
+      var minutes = Math.floor((time % 3600000) / 60000);
+      var formattedTime = hours.toString().padStart(2, "0") + ":" + minutes.toString().padStart(2, "0");
+      return formattedTime;
+    }
+
+    function generatePDF() {
+      var employeeSelect = document.getElementById("employee-select");
+      var selectedEmployeeId = employeeSelect.value;
+      var selectedEmployeeName = employeeSelect.options[employeeSelect.selectedIndex].text;
+      var punchesFiltered = punches.filter(function (punch) {
+        return punch.employeeId === selectedEmployeeId;
+      });
+
+      var doc = new jsPDF();
+
+      // Cabeçalho do PDF
+      doc.setFontSize(14);
+      doc.text("Rosseto & Araujo Transportes LTDA", 20, 20);
+      doc.text("CNPJ da Empresa", 20, 30);
+      doc.text("Av Comendador Italo Mazzei nº 1150", 20, 40);
+      doc.setFontSize(18);
+      doc.text("Folha de Ponto", 20, 60);
+      doc.setFontSize(16);
+      doc.text("Folha de Ponto do Colaborador " + selectedEmployeeName, 20, 80);
+
+      // Tabela com os dados de ponto
+      var tableData = [];
+      punchesFiltered.forEach(function (punch) {
+        tableData.push([
+          punch.date,
+          punch.punchType === "entrada" ? punch.time : "-",
+          punch.punchType === "saida_almoco" ? punch.time : "-",
+          punch.punchType === "entrada_almoco" ? punch.time : "-",
+          punch.punchType === "saida_final" || punch.punchType === "saida" ? punch.time : "-",
+          punch.extra || "-"
+        ]);
+      });
+
+      doc.autoTable({
+        head: [["Data", "Entrada", "Saída Almoço", "Entrada Almoço", "Saída Final", "Extra"]],
+        body: tableData,
+        startY: 90,
+        theme: "plain"
+      });
+
+      // Calcula o tempo extra
+      var employee = getEmployeeById(selectedEmployeeId);
+      var extraTime = calculateExtraTime(punchesFiltered, employee);
+
+      // Assinatura do colaborador e total de horas extras
+      doc.setFontSize(14);
+      doc.text("Assinatura do Colaborador: __________________________", 20, doc.autoTable.previous.finalY + 20);
+      doc.text("Total de Horas Extras: " + formatTime(extraTime), 20, doc.autoTable.previous.finalY + 40);
+
+      // Salva o PDF
+      doc.save("folha-de-ponto.pdf");
+    }
+
+    function resetPunches() {
+      punches = [];
+      localStorage.removeItem("punches");
+      generateReport();
+    }
+
+    function showCheckmark() {
+      var checkmarkWrapper = document.getElementById("checkmark-wrapper");
+      checkmarkWrapper.style.display = "flex";
+
+      setTimeout(function() {
+        checkmarkWrapper.style.display = "none";
+      }, 3000);
+    }
+
+
+    
+  </script>
+</body>
+
+</html>
