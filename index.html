@@ -123,7 +123,7 @@
     <select id="employee-select" onchange="generateReport()">
       <option value="">Selecione um colaborador</option>
       <option value="11118">Welton Alfa Esteves</option>
-      <option value="002">Colaborador 2</option>
+      <option value="002">Jessica Freitas</option>
     </select><br>
     <div id="employee-report"></div>
     <button onclick="generatePDF()">Gerar PDF</button>
@@ -155,39 +155,44 @@
     }
 
     function registerPunch(event) {
-      if (event.keyCode === 13) {
-        var employeeId = document.getElementById("employee-id").value;
-        var employee = getEmployeeById(employeeId);
+  if (event.keyCode === 13) {
+    var employeeId = document.getElementById("employee-id").value;
+    var employee = getEmployeeById(employeeId);
 
-        if (employee) {
-          var date = new Date().toLocaleDateString();
-          var time = new Date().toLocaleTimeString();
+    if (employee) {
+      var date = new Date().toLocaleDateString();
+      var time = new Date().toLocaleTimeString();
 
-          var punchType = getPunchType(time);
-          var lastPunch = getLastPunch(employeeId);
+      var punchType = getPunchType(time);
 
-          if (lastPunch && lastPunch.date === date) {
-            punches.splice(punches.indexOf(lastPunch), 1);
-          }
+      var existingPunch = punches.find(function(punch) {
+        return punch.employeeId === employeeId && punch.date === date;
+      });
 
-          punches.push({
-            employeeId: employeeId,
-            employeeName: employee.name,
-            date: date,
-            time: time,
-            punchType: punchType
-          });
-
-          localStorage.setItem("punches", JSON.stringify(punches));
-          document.getElementById("employee-id").value = "";
-
-          showCheckmark(employee.name);
-          generateReport();
-        } else {
-          alert("Colaborador não encontrado. Verifique o código de matrícula digitado.");
-        }
+      if (existingPunch) {
+        existingPunch.time += " " + time;
+      } else {
+        punches.push({
+          employeeId: employeeId,
+          employeeName: employee.name,
+          date: date,
+          time: time,
+          punchType: punchType
+        });
       }
+
+      localStorage.setItem("punches", JSON.stringify(punches));
+      document.getElementById("employee-id").value = "";
+
+      showCheckmark(employee.name);
+      generateReport();
+    } else {
+      alert("Colaborador não encontrado. Verifique o código de matrícula digitado.");
     }
+  }
+}
+
+
 
     function getEmployeeById(employeeId) {
       return employees.find(function (employee) {
@@ -295,33 +300,40 @@
         employeeReport.appendChild(table);
       }
     }
+function calculateExtraTime(punches, employee) {
+  var totalExtraTime = 0;
+  var punchesFiltered = punches.filter(function(punch) {
+    return punch.employeeId === employee.id;
+  });
 
-    function calculateExtraTime(punches, employee) {
-      var totalExtraTime = 0;
-      var punchesFiltered = punches.filter(function (punch) {
-        return punch.employeeId === employee.id;
-      });
+  var punchInTimes = [];
+  var punchOutTimes = [];
 
-      for (var i = 0; i < punchesFiltered.length; i += 2) {
-        var punchIn = punchesFiltered[i];
-        var punchOut = punchesFiltered[i + 1];
-
-        if (punchIn && punchOut) {
-          var punchInTime = new Date(punchIn.date + " " + punchIn.time);
-          var punchOutTime = new Date(punchOut.date + " " + punchOut.time);
-          var timeDiff = punchOutTime - punchInTime;
-          var extraTime = timeDiff - (employee.jornada * 3600000);
-
-          if (extraTime > 0) {
-            punchesFiltered[i].extra = formatTime(extraTime);
-            punchesFiltered[i + 1].extra = formatTime(extraTime);
-            totalExtraTime += extraTime;
-          }
-        }
-      }
-
-      return totalExtraTime;
+  punchesFiltered.forEach(function(punch) {
+    if (punch.punchType === "entrada") {
+      punchInTimes.push(new Date(punch.date + " " + punch.time));
+    } else if (punch.punchType === "saida_final" || punch.punchType === "saida") {
+      punchOutTimes.push(new Date(punch.date + " " + punch.time));
     }
+  });
+
+  for (var i = 0; i < punchInTimes.length; i++) {
+    var punchInTime = punchInTimes[i];
+    var punchOutTime = punchOutTimes[i];
+
+    if (punchInTime && punchOutTime) {
+      var timeDiff = punchOutTime - punchInTime;
+      var extraTime = timeDiff - (employee.jornada * 3600000);
+
+      if (extraTime > 0) {
+        totalExtraTime += extraTime;
+      }
+    }
+  }
+
+  return totalExtraTime;
+}
+
 
     function formatTime(time) {
       var hours = Math.floor(time / 3600000);
@@ -405,5 +417,3 @@
 </body>
 
 </html>
-
-
