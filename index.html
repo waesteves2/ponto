@@ -1,13 +1,10 @@
 <!DOCTYPE html>
 <html lang="pt">
-
 <head>
   <title>Sistema de Controle de Ponto</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.3/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
-
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -42,7 +39,6 @@
     }
 
     #employee-id {
-
       padding: 10px;
       border-radius: 5px;
     }
@@ -62,12 +58,10 @@
         transform: scale(0);
         opacity: 0;
       }
-
       50% {
         transform: scale(1.2);
         opacity: 1;
       }
-
       100% {
         transform: scale(1);
         opacity: 0;
@@ -83,9 +77,9 @@
       margin-top: 10px;
     }
 
-     .checkmark-wrapper {
+    .checkmark-wrapper {
       position: fixed;
-      top: 50%;
+      top: 75%;
       left: 50%;
       transform: translate(-50%, -50%);
       z-index: 9999;
@@ -99,7 +93,7 @@
     }
 
     .checkmark-wrapper img {
-      max-width: 20%;
+      max-width: 30%;
       max-height: 70%;
     }
 
@@ -107,9 +101,12 @@
       font-size: 20px;
       margin-top: 10px;
     }
+
+    .day-of-week {
+      color: rgb(8, 8, 8);
+    }
   </style>
 </head>
-
 <body>
   <h1>Ponto</h1>
 
@@ -124,19 +121,20 @@
       <option value="">Selecione um colaborador</option>
       <option value="11118">Welton Alfa Esteves</option>
       <option value="002">Jessica Freitas</option>
-    </select><br>
+    </select><br><br>
     <div id="employee-report"></div>
     <button onclick="generatePDF()">Gerar PDF</button>
     <button id="reset-button" onclick="resetPunches()">Resetar</button>
   </div>
 
- <!-- Container da imagem do checkmark -->
+  <!-- Container da imagem do checkmark -->
   <div id="checkmark-wrapper" class="checkmark-wrapper" style="display: none;">
     <img id="checkmark-image" src="https://imagepng.org/wp-content/uploads/2019/12/check-icone-3.png" alt="Checkmark">
     <span id="checkmark-text"></span>
   </div>
 
-
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/locale/pt-br.js"></script>
   <script>
     var employees = [
       { id: "11118", name: "Welton Alfa Esteves", jornada: 8.48 },
@@ -155,44 +153,121 @@
     }
 
     function registerPunch(event) {
-  if (event.keyCode === 13) {
-    var employeeId = document.getElementById("employee-id").value;
-    var employee = getEmployeeById(employeeId);
+      if (event.keyCode === 13) {
+        var employeeId = document.getElementById("employee-id").value;
+        var employee = getEmployeeById(employeeId);
 
-    if (employee) {
-      var date = new Date().toLocaleDateString();
-      var time = new Date().toLocaleTimeString();
+        if (employee) {
+          var date = new Date().toLocaleDateString();
+          var time = new Date().toLocaleTimeString();
 
-      var punchType = getPunchType(time);
+          var punchType = getPunchType(time);
+          var lastPunch = getLastPunch(employeeId);
 
-      var existingPunch = punches.find(function(punch) {
-        return punch.employeeId === employeeId && punch.date === date;
-      });
+          if (lastPunch && lastPunch.date === date) {
+            // Atualiza o registro existente caso seja do mesmo dia
+            if (punchType === "entrada" && lastPunch.punchType === "entrada") {
+              lastPunch.time = time;
+            } else if (punchType === "saida_almoco" && lastPunch.punchType === "saida_almoco") {
+              lastPunch.time = time;
+            } else if (punchType === "entrada_almoco" && lastPunch.punchType === "entrada_almoco") {
+              lastPunch.time = time;
+            } else if ((punchType === "saida_final" || punchType === "saida") && (lastPunch.punchType === "saida_final" || lastPunch.punchType === "saida")) {
+              lastPunch.time = time;
+            } else {
+              // Caso contrário, adiciona um novo registro
+              punches.push({
+                employeeId: employeeId,
+                employeeName: employee.name,
+                date: date,
+                time: time,
+                punchType: punchType
+              });
+            }
+          } else {
+            // Adiciona um novo registro
+            punches.push({
+              employeeId: employeeId,
+              employeeName: employee.name,
+              date: date,
+              time: time,
+              punchType: punchType
+            });
+          }
 
-      if (existingPunch) {
-        existingPunch.time += " " + time;
-      } else {
-        punches.push({
-          employeeId: employeeId,
-          employeeName: employee.name,
-          date: date,
-          time: time,
-          punchType: punchType
-        });
+          localStorage.setItem("punches", JSON.stringify(punches));
+          document.getElementById("employee-id").value = "";
+
+          showCheckmark(employee.name);
+          generateReport();
+        } else {
+          alert("Colaborador não encontrado. Verifique o código de matrícula digitado.");
+        }
       }
-
-      localStorage.setItem("punches", JSON.stringify(punches));
-      document.getElementById("employee-id").value = "";
-
-      showCheckmark(employee.name);
-      generateReport();
-    } else {
-      alert("Colaborador não encontrado. Verifique o código de matrícula digitado.");
     }
-  }
-}
 
+    function generateReport() {
+      var employeeSelect = document.getElementById("employee-select");
+      var selectedEmployeeId = employeeSelect.value;
+      var employeeReport = document.getElementById("employee-report");
+      employeeReport.innerHTML = "";
 
+      if (selectedEmployeeId) {
+        var punchesFiltered = punches.filter(function(punch) {
+          return punch.employeeId === selectedEmployeeId;
+        });
+
+        var table = document.createElement("table");
+        table.classList.add("report-table");
+
+        var headerRow = document.createElement("tr");
+        var headers = ["Data", "Dia da Semana", "Entrada manhã", "Saída manhã", "Entrada Tarde", "Saída Tarde", "Hora Extra", "Horas Trabalhadas"];
+
+        headers.forEach(function(headerText) {
+          var headerCell = document.createElement("th");
+          headerCell.textContent = headerText;
+          headerRow.appendChild(headerCell);
+        });
+
+        table.appendChild(headerRow);
+
+        var totalHoursWorked = 0;
+        punchesFiltered.forEach(function(punch) {
+          var row = document.createElement("tr");
+          var cells = [
+            punch.date,
+            getDayOfWeek(punch.date),
+            punch.punchType === "entrada" ? punch.time : "-",
+            punch.punchType === "saida_almoco" ? punch.time : "-",
+            punch.punchType === "entrada_almoco" ? punch.time : "-",
+            punch.punchType === "saida_final" || punch.punchType === "saida" ? punch.time : "-",
+            punch.extra || "-",
+            punch.hoursWorked || "-"
+          ];
+
+          cells.forEach(function(cellText, index) {
+            var cell = document.createElement("td");
+            cell.textContent = cellText;
+            if (index === 1) {
+              cell.classList.add("day-of-week");
+            }
+            row.appendChild(cell);
+          });
+
+          table.appendChild(row);
+
+          if (punch.hoursWorked) {
+            totalHoursWorked += punch.hoursWorked;
+          }
+        });
+
+        employeeReport.appendChild(table);
+
+        var totalHoursWorkedElement = document.createElement("div");
+        totalHoursWorkedElement.textContent = "Total de Horas Trabalhadas: " + totalHoursWorked.toFixed(2) + " horas";
+        employeeReport.appendChild(totalHoursWorkedElement);
+      }
+    }
 
     function getEmployeeById(employeeId) {
       return employees.find(function (employee) {
@@ -252,171 +327,54 @@
       }, 3000);
     }
 
-    function generateReport() {
-  var employeeSelect = document.getElementById("employee-select");
-  var selectedEmployeeId = employeeSelect.value;
-  var employeeReport = document.getElementById("employee-report");
-  employeeReport.innerHTML = "";
-
-  if (selectedEmployeeId) {
-    var punchesFiltered = punches.filter(function(punch) {
-      return punch.employeeId === selectedEmployeeId;
-    });
-
-    var table = document.createElement("table");
-    table.classList.add("report-table");
-
-    var headerRow = document.createElement("tr");
-    var headers = ["Data", "Entrada", "Saída Almoço", "Entrada Almoço", "Saída Final", "Extra", "Horas Trabalhadas"];
-
-    headers.forEach(function(headerText) {
-      var headerCell = document.createElement("th");
-      headerCell.textContent = headerText;
-      headerRow.appendChild(headerCell);
-    });
-
-    table.appendChild(headerRow);
-
-    var totalHoursWorked = 0;
-    punchesFiltered.forEach(function(punch) {
-      var row = document.createElement("tr");
-      var cells = [
-        punch.date,
-        punch.punchType === "entrada" ? punch.time : "-",
-        punch.punchType === "saida_almoco" ? punch.time : "-",
-        punch.punchType === "entrada_almoco" ? punch.time : "-",
-        punch.punchType === "saida_final" || punch.punchType === "saida" ? punch.time : "-",
-        punch.extra || "-",
-        punch.hoursWorked || "-"
-      ];
-
-      cells.forEach(function(cellText) {
-        var cell = document.createElement("td");
-        cell.textContent = cellText;
-        row.appendChild(cell);
-      });
-
-      table.appendChild(row);
-
-      if (punch.hoursWorked) {
-        totalHoursWorked += punch.hoursWorked;
-      }
-    });
-
-    employeeReport.appendChild(table);
-
-    var totalHoursWorkedElement = document.createElement("div");
-    totalHoursWorkedElement.textContent = "Total de Horas Trabalhadas: " + totalHoursWorked.toFixed(2) + " horas";
-    employeeReport.appendChild(totalHoursWorkedElement);
-  }
-}
-
-function calculateExtraTime(punches, employee) {
-  var totalExtraTime = 0;
-  var totalHoursWorked = 0;
-  var punchesFiltered = punches.filter(function(punch) {
-    return punch.employeeId === employee.id;
-  });
-
-  var punchInTimes = [];
-  var punchOutTimes = [];
-
-  punchesFiltered.forEach(function(punch) {
-    if (punch.punchType === "entrada") {
-      punchInTimes.push(new Date(punch.date + " " + punch.time));
-    } else if (punch.punchType === "saida_final" || punch.punchType === "saida") {
-      punchOutTimes.push(new Date(punch.date + " " + punch.time));
-    }
-  });
-
-  for (var i = 0; i < punchInTimes.length; i++) {
-    var punchInTime = punchInTimes[i];
-    var punchOutTime = punchOutTimes[i];
-
-    if (punchInTime && punchOutTime) {
-      var timeDiff = punchOutTime - punchInTime;
-      var extraTime = timeDiff - (employee.jornada * 3600000);
-      var hoursWorked = timeDiff / 3600000;
-
-      if (extraTime > 0) {
-        totalExtraTime += extraTime;
-      }
-
-      totalHoursWorked += hoursWorked;
-
-      punchesFiltered[i].hoursWorked = hoursWorked.toFixed(2);
-    }
-  }
-
-  return {
-    totalExtraTime: totalExtraTime,
-    totalHoursWorked: totalHoursWorked
-  };
-}
-
-function calculateExtraTime(punches, employee) {
-  var totalExtraTime = 0;
-  var punchesFiltered = punches.filter(function(punch) {
-    return punch.employeeId === employee.id;
-  });
-
-  var punchInTimes = [];
-  var punchOutTimes = [];
-
-  punchesFiltered.forEach(function(punch) {
-    if (punch.punchType === "entrada") {
-      punchInTimes.push(new Date(punch.date + " " + punch.time));
-    } else if (punch.punchType === "saida_final" || punch.punchType === "saida") {
-      punchOutTimes.push(new Date(punch.date + " " + punch.time));
-    }
-  });
-
-  for (var i = 0; i < punchInTimes.length; i++) {
-    var punchInTime = punchInTimes[i];
-    var punchOutTime = punchOutTimes[i];
-
-    if (punchInTime && punchOutTime) {
-      var timeDiff = punchOutTime - punchInTime;
-      var extraTime = timeDiff - (employee.jornada * 3600000);
-
-      if (extraTime > 0) {
-        totalExtraTime += extraTime;
-      }
-    }
-  }
-
-  return totalExtraTime;
-}
-
-
-    function formatTime(time) {
-      var hours = Math.floor(time / 3600000);
-      var minutes = Math.floor((time % 3600000) / 60000);
-      var formattedTime = hours.toString().padStart(2, "0") + ":" + minutes.toString().padStart(2, "0");
-      return formattedTime;
-    }
-
     function generatePDF() {
       var employeeSelect = document.getElementById("employee-select");
       var selectedEmployeeId = employeeSelect.value;
-      var selectedEmployeeName = employeeSelect.options[employeeSelect.selectedIndex].text;
+
+      if (!selectedEmployeeId) {
+        var allEmployeesData = [];
+
+        employees.forEach(function (employee) {
+          var punchesFiltered = punches.filter(function (punch) {
+            return punch.employeeId === employee.id;
+          });
+
+          var tableData = [];
+          punchesFiltered.forEach(function (punch) {
+            tableData.push([
+              punch.date,
+              punch.punchType === "entrada" ? punch.time : "-",
+              punch.punchType === "saida_almoco" ? punch.time : "-",
+              punch.punchType === "entrada_almoco" ? punch.time : "-",
+              punch.punchType === "saida_final" || punch.punchType === "saida" ? punch.time : "-",
+              punch.extra || "-"
+            ]);
+          });
+
+          allEmployeesData.push({
+            employeeName: employee.name,
+            tableData: tableData
+          });
+        });
+
+        generatePDFForAllEmployees(allEmployeesData);
+      } else {
+        // Obtém os dados do colaborador selecionado
+        var selectedEmployee = employees.find(function (employee) {
+          return employee.id === selectedEmployeeId;
+        });
+
+        generatePDFForEmployee(selectedEmployee);
+      }
+    }
+
+    function generatePDFForEmployee(employee) {
+      var selectedEmployeeId = employee.id;
+      var selectedEmployeeName = employee.name;
       var punchesFiltered = punches.filter(function (punch) {
         return punch.employeeId === selectedEmployeeId;
       });
 
-      var doc = new jsPDF();
-
-      // Cabeçalho do PDF
-      doc.setFontSize(14);
-      doc.text("Rosseto & Araujo Transportes LTDA", 20, 20);
-      doc.text("CNPJ da Empresa", 20, 30);
-      doc.text("Av Comendador Italo Mazzei nº 1150", 20, 40);
-      doc.setFontSize(18);
-      doc.text("Folha de Ponto", 20, 60);
-      doc.setFontSize(16);
-      doc.text("Folha de Ponto do Colaborador " + selectedEmployeeName, 20, 80);
-
-      // Tabela com os dados de ponto
       var tableData = [];
       punchesFiltered.forEach(function (punch) {
         tableData.push([
@@ -429,24 +387,129 @@ function calculateExtraTime(punches, employee) {
         ]);
       });
 
-      doc.autoTable({
-        head: [["Data", "Entrada manhã", "Saída manhã", "Entrada tarde", "Saída tarde", "Hora Extra"]],
-        body: tableData,
-        startY: 90,
-        theme: "plain"
-      });
+      var totalExtraTime = calculateExtraTime(punchesFiltered, employee);
+      var totalHoursWorked = calculateTotalHoursWorked(punchesFiltered);
 
-      // Calcula o tempo extra
-      var employee = getEmployeeById(selectedEmployeeId);
-      var extraTime = calculateExtraTime(punchesFiltered, employee);
+      var style = `
+        <style>
+          h1 {
+            color: #333;
+            font-size: 24px;
+          }
+          table {
+            border-collapse: collapse;
+            width: 100%;
+          }
+          th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+          }
+          h3 {
+            font-size: 15px;
+          }
+        </style>
+      `;
 
-      // Assinatura do colaborador e total de horas extras
-      doc.setFontSize(14);
-      doc.text("Assinatura do Colaborador: __________________________", 20, doc.autoTable.previous.finalY + 20);
-      doc.text("Total de Horas Extras: " + formatTime(extraTime), 20, doc.autoTable.previous.finalY + 40);
+      var element = document.createElement("div");
+      element.innerHTML = `
+        ${style}
+        <h1>Rosseto & Araujo Transportes LTDA</h1>
+        <h2>Folha de Ponto</h2>
+        <h3>Colaborador(a): ${selectedEmployeeName}</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Entrada manhã</th>
+              <th>Saída manhã</th>
+              <th>Entrada tarde</th>
+              <th>Saída tarde</th>
+              <th>Hora Extra</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tableData.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join("")}</tr>`).join("")}
+          </tbody>
+        </table>
+        <p>Total de Horas Trabalhadas: ${totalHoursWorked.toFixed(2)} horas</p>
+        <p>Total de Horas Extras: ${totalExtraTime.toFixed(2)} horas</p>
+      `;
 
-      // Salva o PDF
-      doc.save("folha-de-ponto.pdf");
+      var filename = `folha-de-ponto-${selectedEmployeeName}.pdf`;
+
+      html2pdf()
+        .set({
+          margin: 10,
+          filename: filename,
+          image: { type: "jpeg", quality: 0.98 },
+          html2canvas: { dpi: 192, letterRendering: true },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+        })
+        .from(element)
+        .save();
+    }
+
+    function generatePDFForAllEmployees(allEmployeesData) {
+      var style = `
+        <style>
+          h1 {
+            color: #333;
+            font-size: 24px;
+          }
+          table {
+            border-collapse: collapse;
+            width: 100%;
+          }
+          th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+          }
+          h3 {
+            font-size: 15px;
+          }
+        </style>
+      `;
+
+      var element = document.createElement("div");
+      element.innerHTML = `
+        ${style}
+        <h1>Rosseto & Araujo Transportes LTDA</h1>
+        <h2>Folha de Ponto - Todos os Colaboradores</h2>
+        ${allEmployeesData.map(employeeData => `
+          <h3>Colaborador(a): ${employeeData.employeeName}</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Entrada manhã</th>
+                <th>Saída manhã</th>
+                <th>Entrada tarde</th>
+                <th>Saída tarde</th>
+                <th>Hora Extra</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${employeeData.tableData.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join("")}</tr>`).join("")}
+            </tbody>
+          </table>
+          <p>--------------------------------------------</p>
+        `).join("")}
+      `;
+
+      var filename = `folha-de-ponto-todos-os-colaboradores.pdf`;
+
+      html2pdf()
+        .set({
+          margin: 10,
+          filename: filename,
+          image: { type: "jpeg", quality: 0.98 },
+          html2canvas: { dpi: 192, letterRendering: true },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+        })
+        .from(element)
+        .save();
     }
 
     function resetPunches() {
@@ -455,21 +518,70 @@ function calculateExtraTime(punches, employee) {
       generateReport();
     }
 
- function showCheckmark(employeeName) {
-      var checkmarkWrapper = document.getElementById("checkmark-wrapper");
-      var checkmarkImage = document.getElementById("checkmark-image");
-      var checkmarkText = document.getElementById("checkmark-text");
+    function getDayOfWeek(dateString) {
+      var daysOfWeek = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
+      var dateParts = dateString.split("/");
+      var year = parseInt(dateParts[2]);
+      var month = parseInt(dateParts[1]) - 1;
+      var day = parseInt(dateParts[0]);
+      var date = new Date(year, month, day);
+      var dayOfWeek = date.getDay();
+      return daysOfWeek[dayOfWeek];
+    }
 
-      checkmarkText.innerText = employeeName;
-      checkmarkWrapper.style.display = "flex";
+    function calculateExtraTime(punchesFiltered, employee) {
+      var totalExtraTime = 0;
 
-      setTimeout(function () {
-        checkmarkWrapper.style.display = "none";
-      }, 3000);
+      punchesFiltered.forEach(function(punch) {
+        if (punch.punchType === "saida_final" || punch.punchType === "saida") {
+          var punchInTime = getMatchingPunchInTime(punchesFiltered, punch);
+          if (punchInTime) {
+            var timeDiff = punch.time - punchInTime;
+            var extraTime = timeDiff - (employee.jornada * 3600000);
+            if (extraTime > 0) {
+              totalExtraTime += extraTime;
+            }
+          }
+        }
+      });
+
+      return totalExtraTime;
+    }
+
+    function getMatchingPunchInTime(punchesFiltered, punchOutPunch) {
+      for (var i = punchesFiltered.length - 1; i >= 0; i--) {
+        var punch = punchesFiltered[i];
+        if (punch.punchType === "entrada" && punch.date === punchOutPunch.date) {
+          return punch.time;
+        }
+      }
+      return null;
+    }
+
+    function calculateTotalHoursWorked(punchesFiltered) {
+      var totalHoursWorked = 0;
+      var currentDate = null;
+
+      for (var i = 0; i < punchesFiltered.length; i++) {
+        var punch = punchesFiltered[i];
+
+        if (punch.punchType === "entrada") {
+          currentDate = punch.date;
+        } else if ((punch.punchType === "saida_final" || punch.punchType === "saida") && currentDate === punch.date) {
+          var punchInTime = getMatchingPunchInTime(punchesFiltered, punch);
+          if (punchInTime) {
+            var timeDiff = punch.time - punchInTime;
+            var hoursWorked = timeDiff / 3600000;
+            totalHoursWorked += hoursWorked;
+            punchesFiltered[i].hoursWorked = hoursWorked.toFixed(2);
+          }
+        }
+      }
+
+      return totalHoursWorked;
     }
   </script>
+
 </body>
 
 </html>
-
-
