@@ -127,6 +127,8 @@
     <button id="reset-button" onclick="resetPunches()">Resetar</button>
   </div>
 
+  
+
   <!-- Container da imagem do checkmark -->
   <div id="checkmark-wrapper" class="checkmark-wrapper" style="display: none;">
     <img id="checkmark-image" src="https://imagepng.org/wp-content/uploads/2019/12/check-icone-3.png" alt="Checkmark">
@@ -166,13 +168,17 @@
 
           if (lastPunch && lastPunch.date === date) {
             // Atualiza o registro existente caso seja do mesmo dia
-            if (punchType === "entrada" && lastPunch.punchType === "entrada") {
+            if (punchType === "entrada_manha" && lastPunch.punchType === "entrada_manha") {
               lastPunch.time = time;
-            } else if (punchType === "saida_almoco" && lastPunch.punchType === "saida_almoco") {
+            } else if (punchType === "saida_manha" && lastPunch.punchType === "saida_manha") {
               lastPunch.time = time;
-            } else if (punchType === "entrada_almoco" && lastPunch.punchType === "entrada_almoco") {
+            } else if (punchType === "entrada_tarde" && lastPunch.punchType === "entrada_tarde") {
               lastPunch.time = time;
-            } else if ((punchType === "saida_final" || punchType === "saida") && (lastPunch.punchType === "saida_final" || lastPunch.punchType === "saida")) {
+            } else if (punchType === "saida_tarde" && lastPunch.punchType === "saida_tarde") {
+              lastPunch.time = time;
+            } else if (punchType === "extra" && lastPunch.punchType === "extra") {
+              lastPunch.time = time;
+            } else if (punchType === "horas_trabalhadas" && lastPunch.punchType === "horas_trabalhadas") {
               lastPunch.time = time;
             } else {
               // Caso contrário, adiciona um novo registro
@@ -231,18 +237,17 @@
 
         table.appendChild(headerRow);
 
-        var totalHoursWorked = 0;
         punchesFiltered.forEach(function(punch) {
           var row = document.createElement("tr");
           var cells = [
             punch.date,
             getDayOfWeek(punch.date),
-            punch.punchType === "entrada" ? punch.time : "-",
-            punch.punchType === "saida_almoco" ? punch.time : "-",
-            punch.punchType === "entrada_almoco" ? punch.time : "-",
-            punch.punchType === "saida_final" || punch.punchType === "saida" ? punch.time : "-",
-            punch.extra || "-",
-            punch.hoursWorked || "-"
+            punch.punchType === "entrada_manha" ? punch.time : "-",
+            punch.punchType === "saida_manha" ? punch.time : "-",
+            punch.punchType === "entrada_tarde" ? punch.time : "-",
+            punch.punchType === "saida_tarde" ? punch.time : "-",
+            punch.punchType === "extra" ? punch.time : "-",
+            punch.punchType === "horas_trabalhadas" ? punch.time : "-"
           ];
 
           cells.forEach(function(cellText, index) {
@@ -255,17 +260,9 @@
           });
 
           table.appendChild(row);
-
-          if (punch.hoursWorked) {
-            totalHoursWorked += punch.hoursWorked;
-          }
         });
 
         employeeReport.appendChild(table);
-
-        var totalHoursWorkedElement = document.createElement("div");
-        totalHoursWorkedElement.textContent = "Total de Horas Trabalhadas: " + totalHoursWorked.toFixed(2) + " horas";
-        employeeReport.appendChild(totalHoursWorkedElement);
       }
     }
 
@@ -290,15 +287,17 @@
       } else if (hour === 13 && minutes < 20) {
         return "saida_manha";
       } else if (hour === 13 && minutes >= 20) {
-        return "entrada_tarde";
+        return "saida_manha";
       } else if (hour > 13 && hour < 15) {
         return "entrada_tarde";
       } else if (hour === 15 && minutes <= 30) {
         return "entrada_tarde";
       } else if (hour >= 17 && hour < 20) {
         return "saida_tarde";
+      } else if (hour >= 20) {
+        return "extra";
       } else {
-        return "saida_tarde";
+        return "horas_trabalhadas";
       }
     }
 
@@ -343,11 +342,12 @@
           punchesFiltered.forEach(function (punch) {
             tableData.push([
               punch.date,
-              punch.punchType === "entrada" ? punch.time : "-",
-              punch.punchType === "saida_almoco" ? punch.time : "-",
-              punch.punchType === "entrada_almoco" ? punch.time : "-",
-              punch.punchType === "saida_final" || punch.punchType === "saida" ? punch.time : "-",
-              punch.extra || "-"
+              punch.punchType === "entrada_manha" ? punch.time : "-",
+              punch.punchType === "saida_manha" ? punch.time : "-",
+              punch.punchType === "entrada_tarde" ? punch.time : "-",
+              punch.punchType === "saida_tarde" ? punch.time : "-",
+              punch.punchType === "extra" ? punch.time : "-",
+              punch.punchType === "horas_trabalhadas" ? punch.time : "-"
             ]);
           });
 
@@ -379,16 +379,14 @@
       punchesFiltered.forEach(function (punch) {
         tableData.push([
           punch.date,
-          punch.punchType === "entrada" ? punch.time : "-",
-          punch.punchType === "saida_almoco" ? punch.time : "-",
-          punch.punchType === "entrada_almoco" ? punch.time : "-",
-          punch.punchType === "saida_final" || punch.punchType === "saida" ? punch.time : "-",
-          punch.extra || "-"
+          punch.punchType === "entrada_manha" ? punch.time : "-",
+          punch.punchType === "saida_manha" ? punch.time : "-",
+          punch.punchType === "entrada_tarde" ? punch.time : "-",
+          punch.punchType === "saida_tarde" ? punch.time : "-",
+          punch.punchType === "extra" ? punch.time : "-",
+          punch.punchType === "horas_trabalhadas" ? punch.time : "-"
         ]);
       });
-
-      var totalExtraTime = calculateExtraTime(punchesFiltered, employee);
-      var totalHoursWorked = calculateTotalHoursWorked(punchesFiltered);
 
       var style = `
         <style>
@@ -426,14 +424,13 @@
               <th>Entrada tarde</th>
               <th>Saída tarde</th>
               <th>Hora Extra</th>
+              <th>Horas Trabalhadas</th>
             </tr>
           </thead>
           <tbody>
             ${tableData.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join("")}</tr>`).join("")}
           </tbody>
         </table>
-        <p>Total de Horas Trabalhadas: ${totalHoursWorked.toFixed(2)} horas</p>
-        <p>Total de Horas Extras: ${totalExtraTime.toFixed(2)} horas</p>
       `;
 
       var filename = `folha-de-ponto-${selectedEmployeeName}.pdf`;
@@ -488,6 +485,7 @@
                 <th>Entrada tarde</th>
                 <th>Saída tarde</th>
                 <th>Hora Extra</th>
+                <th>Horas Trabalhadas</th>
               </tr>
             </thead>
             <tbody>
@@ -527,58 +525,6 @@
       var date = new Date(year, month, day);
       var dayOfWeek = date.getDay();
       return daysOfWeek[dayOfWeek];
-    }
-
-    function calculateExtraTime(punchesFiltered, employee) {
-      var totalExtraTime = 0;
-
-      punchesFiltered.forEach(function(punch) {
-        if (punch.punchType === "saida_final" || punch.punchType === "saida") {
-          var punchInTime = getMatchingPunchInTime(punchesFiltered, punch);
-          if (punchInTime) {
-            var timeDiff = punch.time - punchInTime;
-            var extraTime = timeDiff - (employee.jornada * 3600000);
-            if (extraTime > 0) {
-              totalExtraTime += extraTime;
-            }
-          }
-        }
-      });
-
-      return totalExtraTime;
-    }
-
-    function getMatchingPunchInTime(punchesFiltered, punchOutPunch) {
-      for (var i = punchesFiltered.length - 1; i >= 0; i--) {
-        var punch = punchesFiltered[i];
-        if (punch.punchType === "entrada" && punch.date === punchOutPunch.date) {
-          return punch.time;
-        }
-      }
-      return null;
-    }
-
-    function calculateTotalHoursWorked(punchesFiltered) {
-      var totalHoursWorked = 0;
-      var currentDate = null;
-
-      for (var i = 0; i < punchesFiltered.length; i++) {
-        var punch = punchesFiltered[i];
-
-        if (punch.punchType === "entrada") {
-          currentDate = punch.date;
-        } else if ((punch.punchType === "saida_final" || punch.punchType === "saida") && currentDate === punch.date) {
-          var punchInTime = getMatchingPunchInTime(punchesFiltered, punch);
-          if (punchInTime) {
-            var timeDiff = punch.time - punchInTime;
-            var hoursWorked = timeDiff / 3600000;
-            totalHoursWorked += hoursWorked;
-            punchesFiltered[i].hoursWorked = hoursWorked.toFixed(2);
-          }
-        }
-      }
-
-      return totalHoursWorked;
     }
   </script>
 
