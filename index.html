@@ -7,7 +7,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.js"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family:'Courier New', Courier, monospace;
+    
     }h1 {
   text-align: center;
 }
@@ -32,8 +33,9 @@
 
 #report table th,
 #report table td {
-  padding: 5px;
   border: 1px solid #000;
+  font-size: small;
+
 }
 
 #employee-id {
@@ -178,10 +180,10 @@ background-color: #ffcccc;
     <input type="text" id="employee-id" autofocus onkeydown="registerPunch(event)">
   </div>
   <div id="report">
-    <h2>cartão de Ponto</h2>
+    <h2>Cartão de Ponto</h2>
     <select id="employee-select" onchange="generateReport()">
       <option value="">Selecione um colaborador</option>
-      <option value="11118">Welton Alfa Esteves</option>
+      <option value="11118">Welton Alves Esteves</option>
       <option value="002">Beatriz Fernanda Veratti</option>
     </select><br><br>
     <div id="employee-report"></div>
@@ -199,7 +201,7 @@ background-color: #ffcccc;
     function buscarColaborador(codigo) {
       const colaboradores = {
         '11118': {
-          nome: 'Welton A Esteves',
+          nome: 'Welton Alves Esteves',
           cpf: '401.260.068-06',
           horarios: {
             entradaManha: { inicio: '07:00', fim: '09:00' },
@@ -227,7 +229,7 @@ background-color: #ffcccc;
     }
 
     var employees = [
-      { id: "11118", name: "Welton Alfa Esteves", jornada: 8.48 },
+      { id: "11118", name: "Welton Alves Esteves", jornada: 8.48 },
       { id: "002", name: "Beatriz Fernanda Veratti", jornada: 8.48 },
     ];
 
@@ -414,7 +416,7 @@ background-color: #ffcccc;
       var checkmarkText = document.getElementById("checkmark-text");
 
       checkmarkWrapper.style.display = "flex";
-      checkmarkText.textContent = "Registro efetuado com sucesso para " + employeeName;
+      checkmarkText.textContent =  employeeName;
 
       setTimeout(function () {
         checkmarkWrapper.style.display = "none";
@@ -426,7 +428,7 @@ background-color: #ffcccc;
       var options = {
         filename: "folha_ponto.pdf",
         image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2 },
+        html2canvas: { scale: 1 },
         jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
       };
 
