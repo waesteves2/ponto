@@ -1,146 +1,234 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-  <title>Sistema de Controle de Ponto</title>
+  <title>Cartão de Ponto</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
-    }
+    }h1 {
+  text-align: center;
+}
 
-    h1 {
-      text-align: center;
-    }
+#punch-in-out {
+  text-align: center;
+}
 
-    #punch-in-out {
-      text-align: center;
-    }
+#punch-in-out input {
+  margin-top: 10px;
+}
 
-    #punch-in-out input {
-      margin-top: 10px;
-    }
+#report {
+  margin-top: 20px;
+  text-align: center;
+}
 
-    #report {
-      margin-top: 20px;
-      text-align: center;
-    }
+#report table {
+  margin: 0 auto;
+  border-collapse: collapse;
+}
 
-    #report table {
-      margin: 0 auto;
-      border-collapse: collapse;
-    }
+#report table th,
+#report table td {
+  padding: 5px;
+  border: 1px solid #000;
+}
 
-    #report table th,
-    #report table td {
-      padding: 5px;
-      border: 1px solid #000;
-    }
+#employee-id {
+  padding: 10px;
+  border-radius: 5px;
+}
 
-    #employee-id {
-      padding: 10px;
-      border-radius: 5px;
-    }
+.checkmark {
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid #000;
+  background-color: #2ecc71;
+  animation: checkmark 3s linear;
+}
 
-    .checkmark {
-      display: inline-block;
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      border: 2px solid #000;
-      background-color: #2ecc71;
-      animation: checkmark 3s linear;
-    }
+@keyframes checkmark {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
 
-    @keyframes checkmark {
-      0% {
-        transform: scale(0);
-        opacity: 0;
-      }
-      50% {
-        transform: scale(1.2);
-        opacity: 1;
-      }
-      100% {
-        transform: scale(1);
-        opacity: 0;
-      }
-    }
+#employee-report {
+  text-align: center;
+  font-size: 18px;
+}
 
-    #employee-report {
-      text-align: center;
-      font-size: 18px;
-    }
+#reset-button {
+  margin-top: 10px;
+}
 
-    #reset-button {
-      margin-top: 10px;
-    }
+.checkmark-wrapper {
+  position: fixed;
+  top: 75%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
+  width: 10cm;
+  height: 10cm;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
 
-    .checkmark-wrapper {
-      position: fixed;
-      top: 75%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 9999;
-      width: 10cm;
-      height: 10cm;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      overflow: hidden;
-    }
 
-    .checkmark-wrapper img {
-      max-width: 30%;
-      max-height: 70%;
-    }
+.checkmark-wrapper img {
+  max-width: 30%;
+  max-height: 70%;
+}
 
-    .checkmark-wrapper span {
-      font-size: 20px;
-      margin-top: 10px;
-    }
+.checkmark-wrapper span {
+  font-size: 20px;
+  margin-top: 10px;
+}
 
-    .day-of-week {
-      color: rgb(8, 8, 8);
-    }
-  </style>
+.day-of-week {
+  color: rgb(8, 8, 8);
+}
+
+h1 {
+font-family: 'Arial', sans-serif;
+color: #2d3436;
+font-size: 24px;
+text-align: center;
+}
+
+#punch-in-out {
+margin-bottom: 20px;
+text-align: center;
+}
+
+label {
+font-family: 'Arial', sans-serif;
+font-size: 16px;
+}
+
+input[type="text"] {
+padding: 10px;
+border: 1px solid #dcdde1;
+border-radius: 4px;
+font-family: 'Arial', sans-serif;
+font-size: 14px;
+}
+
+#report {
+text-align: center;
+}
+
+h2 {
+font-family: 'Arial', sans-serif;
+color: #2d3436;
+font-size: 20px;
+}
+
+select {
+padding: 8px;
+border: 1px solid #dcdde1;
+border-radius: 4px;
+font-family: 'Arial', sans-serif;
+font-size: 14px;
+margin-bottom: 10px;
+}
+
+button {
+padding: 10px 20px;
+background-color: #0984e3;
+color: #ffffff;
+border: none;
+border-radius: 4px;
+font-family: 'Arial', sans-serif;
+font-size: 14px;
+cursor: pointer;
+margin-right: 10px;
+}
+
+#reset-button {
+background-color: #d63031;
+}
+
+.weekend {
+background-color: #ffcccc;
+}
+</style>
+
 </head>
 <body>
   <h1>Ponto</h1>
-
   <div id="punch-in-out">
     <label for="employee-id">Código de Matrícula:</label><br>
     <input type="text" id="employee-id" autofocus onkeydown="registerPunch(event)">
   </div>
-
   <div id="report">
-    <h2>Folha de Ponto</h2>
+    <h2>cartão de Ponto</h2>
     <select id="employee-select" onchange="generateReport()">
       <option value="">Selecione um colaborador</option>
       <option value="11118">Welton Alfa Esteves</option>
-      <option value="002">Jessica Freitas</option>
+      <option value="002">Beatriz Fernanda Veratti</option>
     </select><br><br>
     <div id="employee-report"></div>
     <button onclick="generatePDF()">Gerar PDF</button>
     <button id="reset-button" onclick="resetPunches()">Resetar</button>
   </div>
-
-  
-
   <!-- Container da imagem do checkmark -->
   <div id="checkmark-wrapper" class="checkmark-wrapper" style="display: none;">
     <img id="checkmark-image" src="https://imagepng.org/wp-content/uploads/2019/12/check-icone-3.png" alt="Checkmark">
     <span id="checkmark-text"></span>
   </div>
-
   <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/locale/pt-br.js"></script>
   <script>
+    function buscarColaborador(codigo) {
+      const colaboradores = {
+        '11118': {
+          nome: 'Welton A Esteves',
+          cpf: '401.260.068-06',
+          horarios: {
+            entradaManha: { inicio: '07:00', fim: '09:00' },
+            saidaManha: { inicio: '11:00', fim: '12:10' },
+            entradaTarde: { inicio: '13:30', fim: '14:30' },
+            saidaTarde: { inicio: '17:00', fim: '20:30' },
+            horarioAlmoco: { inicio: '11:00', fim: '13:00' } // Horário de almoço adicionado
+          },
+        },
+        '002': {
+          nome: 'Beatriz Fernanda Veratti',
+          cpf: '222.222.222-22',
+          horarios: {
+            entradaManha: { inicio: '07:00', fim: '09:00' },
+            saidaManha: { inicio: '11:00', fim: '12:10' },
+            entradaTarde: { inicio: '13:00', fim: '13:30' },
+            saidaTarde: { inicio: '17:00', fim: '19:00' },
+            horarioAlmoco: { inicio: '11:00', fim: '13:00' } // Horário de almoço adicionado
+          },
+        },
+        // Adicione outros colaboradores aqui...
+      };
+
+      return colaboradores[codigo];
+    }
+
     var employees = [
       { id: "11118", name: "Welton Alfa Esteves", jornada: 8.48 },
-      { id: "002", name: "Jessica Freitas", jornada: 8.48 },
+      { id: "002", name: "Beatriz Fernanda Veratti", jornada: 8.48 },
     ];
 
     var punches = [];
@@ -157,44 +245,24 @@
     function registerPunch(event) {
       if (event.keyCode === 13) {
         var employeeId = document.getElementById("employee-id").value;
-        var employee = getEmployeeById(employeeId);
+        var employee = buscarColaborador(employeeId);
 
         if (employee) {
+          var employeeName = employee.nome;
           var date = new Date().toLocaleDateString();
           var time = new Date().toLocaleTimeString();
 
-          var punchType = getPunchType(time);
+          var punchType = getPunchType(time, employeeId);
           var lastPunch = getLastPunch(employeeId);
 
-          if (lastPunch && lastPunch.date === date) {
+          if (lastPunch && lastPunch.date === date && punchType !== "almoco") {
             // Atualiza o registro existente caso seja do mesmo dia
-            if (punchType === "entrada_manha" && lastPunch.punchType === "entrada_manha") {
-              lastPunch.time = time;
-            } else if (punchType === "saida_manha" && lastPunch.punchType === "saida_manha") {
-              lastPunch.time = time;
-            } else if (punchType === "entrada_tarde" && lastPunch.punchType === "entrada_tarde") {
-              lastPunch.time = time;
-            } else if (punchType === "saida_tarde" && lastPunch.punchType === "saida_tarde") {
-              lastPunch.time = time;
-            } else if (punchType === "extra" && lastPunch.punchType === "extra") {
-              lastPunch.time = time;
-            } else if (punchType === "horas_trabalhadas" && lastPunch.punchType === "horas_trabalhadas") {
-              lastPunch.time = time;
-            } else {
-              // Caso contrário, adiciona um novo registro
-              punches.push({
-                employeeId: employeeId,
-                employeeName: employee.name,
-                date: date,
-                time: time,
-                punchType: punchType
-              });
-            }
+            lastPunch.time = time;
           } else {
             // Adiciona um novo registro
             punches.push({
               employeeId: employeeId,
-              employeeName: employee.name,
+              employeeName: employeeName,
               date: date,
               time: time,
               punchType: punchType
@@ -204,7 +272,7 @@
           localStorage.setItem("punches", JSON.stringify(punches));
           document.getElementById("employee-id").value = "";
 
-          showCheckmark(employee.name);
+          showCheckmark(employeeName);
           generateReport();
         } else {
           alert("Colaborador não encontrado. Verifique o código de matrícula digitado.");
@@ -219,7 +287,7 @@
       employeeReport.innerHTML = "";
 
       if (selectedEmployeeId) {
-        var punchesFiltered = punches.filter(function(punch) {
+        var punchesFiltered = punches.filter(function (punch) {
           return punch.employeeId === selectedEmployeeId;
         });
 
@@ -227,9 +295,9 @@
         table.classList.add("report-table");
 
         var headerRow = document.createElement("tr");
-        var headers = ["Data", "Dia da Semana", "Entrada manhã", "Saída manhã", "Entrada Tarde", "Saída Tarde", "Hora Extra", "Horas Trabalhadas"];
+        var headers = ["Data", "Dia da Semana", "Entrada Manhã", "Saída Manhã", "Entrada Tarde", "Saída Tarde", "Hora Extra", "Horas Trabalhadas"];
 
-        headers.forEach(function(headerText) {
+        headers.forEach(function (headerText) {
           var headerCell = document.createElement("th");
           headerCell.textContent = headerText;
           headerRow.appendChild(headerCell);
@@ -237,33 +305,67 @@
 
         table.appendChild(headerRow);
 
-        punchesFiltered.forEach(function(punch) {
-          var row = document.createElement("tr");
-          var cells = [
-            punch.date,
-            getDayOfWeek(punch.date),
-            punch.punchType === "entrada_manha" ? punch.time : "-",
-            punch.punchType === "saida_manha" ? punch.time : "-",
-            punch.punchType === "entrada_tarde" ? punch.time : "-",
-            punch.punchType === "saida_tarde" ? punch.time : "-",
-            punch.punchType === "extra" ? punch.time : "-",
-            punch.punchType === "horas_trabalhadas" ? punch.time : "-"
-          ];
+        var punchTypes = ["entrada_manha", "saida_manha", "entrada_tarde", "saida_tarde", "extra", "horas_trabalhadas"];
 
-          cells.forEach(function(cellText, index) {
-            var cell = document.createElement("td");
-            cell.textContent = cellText;
-            if (index === 1) {
-              cell.classList.add("day-of-week");
-            }
-            row.appendChild(cell);
-          });
+        var firstPunchDate = punchesFiltered.length > 0 ? punchesFiltered[0].date : null;
+        var lastPunchDate = punchesFiltered.length > 0 ? punchesFiltered[punchesFiltered.length - 1].date : null;
 
-          table.appendChild(row);
-        });
+        if (firstPunchDate && lastPunchDate) {
+          var currentDate = moment(firstPunchDate, "DD/MM/YYYY");
+          var lastPunchIndex = 0;
+
+          while (currentDate.isSameOrBefore(moment(lastPunchDate, "DD/MM/YYYY"))) {
+            var row = document.createElement("tr");
+
+            var dateCell = document.createElement("td");
+            dateCell.textContent = currentDate.format("DD/MM/YYYY");
+            row.appendChild(dateCell);
+
+            var dayOfWeekCell = document.createElement("td");
+            dayOfWeekCell.textContent = currentDate.format("dddd");
+            row.appendChild(dayOfWeekCell);
+
+            punchTypes.forEach(function (punchType) {
+              var timeCell = document.createElement("td");
+
+              if (lastPunchIndex < punchesFiltered.length) {
+                var punch = punchesFiltered[lastPunchIndex];
+
+                if (punch.date === currentDate.format("DD/MM/YYYY") && punch.punchType === punchType) {
+                  timeCell.textContent = punch.time;
+                  lastPunchIndex++;
+                } else {
+                  timeCell.textContent = "-";
+                }
+              } else {
+                timeCell.textContent = "-";
+              }
+
+              row.appendChild(timeCell);
+            });
+
+            table.appendChild(row);
+
+            currentDate.add(1, "day");
+          }
+        }
 
         employeeReport.appendChild(table);
+        applyWeekendStyle();
       }
+    }
+
+    function applyWeekendStyle() {
+      var tableRows = document.querySelectorAll(".report-table tr");
+
+      tableRows.forEach(function(row) {
+        var dayOfWeekCell = row.querySelector("td:nth-child(2)");
+        var dayOfWeek = dayOfWeekCell.textContent.trim();
+
+        if (dayOfWeek === "Sábado" || dayOfWeek === "Domingo") {
+          row.classList.add("weekend");
+        }
+      });
     }
 
     function getEmployeeById(employeeId) {
@@ -272,29 +374,22 @@
       });
     }
 
-    function getPunchType(time) {
-      var hour = parseInt(time.split(":")[0]);
-      var minutes = parseInt(time.split(":")[1]);
+    function getPunchType(time, employeeId) {
+      var employee = buscarColaborador(employeeId);
+      var horarios = employee.horarios;
+      var horarioAlmoco = horarios.horarioAlmoco; // Obter horário de almoço
 
-      if (hour < 7 || (hour === 7 && minutes < 30)) {
+      if (time >= horarios.entradaManha.inicio && time <= horarios.entradaManha.fim) {
         return "entrada_manha";
-      } else if (hour >= 7 && hour < 9) {
-        return "entrada_manha";
-      } else if (hour === 9 && minutes <= 0) {
-        return "entrada_manha";
-      } else if (hour >= 11 && hour < 13) {
+      } else if (time >= horarios.saidaManha.inicio && time <= horarios.saidaManha.fim) {
         return "saida_manha";
-      } else if (hour === 13 && minutes < 20) {
-        return "saida_manha";
-      } else if (hour === 13 && minutes >= 20) {
-        return "saida_manha";
-      } else if (hour > 13 && hour < 15) {
+      } else if (time >= horarioAlmoco.inicio && time <= horarioAlmoco.fim) { // Verificar se está dentro do horário de almoço
+        return "almoco";
+      } else if (time >= horarios.entradaTarde.inicio && time <= horarios.entradaTarde.fim) {
         return "entrada_tarde";
-      } else if (hour === 15 && minutes <= 30) {
-        return "entrada_tarde";
-      } else if (hour >= 17 && hour < 20) {
+      } else if (time >= horarios.saidaTarde.inicio && time <= horarios.saidaTarde.fim) {
         return "saida_tarde";
-      } else if (hour >= 20) {
+      } else if (time > horarios.saidaTarde.fim) {
         return "extra";
       } else {
         return "horas_trabalhadas";
@@ -318,8 +413,8 @@
       var checkmarkImage = document.getElementById("checkmark-image");
       var checkmarkText = document.getElementById("checkmark-text");
 
-      checkmarkText.innerText = employeeName;
       checkmarkWrapper.style.display = "flex";
+      checkmarkText.textContent = "Registro efetuado com sucesso para " + employeeName;
 
       setTimeout(function () {
         checkmarkWrapper.style.display = "none";
@@ -327,187 +422,15 @@
     }
 
     function generatePDF() {
-      var employeeSelect = document.getElementById("employee-select");
-      var selectedEmployeeId = employeeSelect.value;
+      var report = document.getElementById("report");
+      var options = {
+        filename: "folha_ponto.pdf",
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
+      };
 
-      if (!selectedEmployeeId) {
-        var allEmployeesData = [];
-
-        employees.forEach(function (employee) {
-          var punchesFiltered = punches.filter(function (punch) {
-            return punch.employeeId === employee.id;
-          });
-
-          var tableData = [];
-          punchesFiltered.forEach(function (punch) {
-            tableData.push([
-              punch.date,
-              punch.punchType === "entrada_manha" ? punch.time : "-",
-              punch.punchType === "saida_manha" ? punch.time : "-",
-              punch.punchType === "entrada_tarde" ? punch.time : "-",
-              punch.punchType === "saida_tarde" ? punch.time : "-",
-              punch.punchType === "extra" ? punch.time : "-",
-              punch.punchType === "horas_trabalhadas" ? punch.time : "-"
-            ]);
-          });
-
-          allEmployeesData.push({
-            employeeName: employee.name,
-            tableData: tableData
-          });
-        });
-
-        generatePDFForAllEmployees(allEmployeesData);
-      } else {
-        // Obtém os dados do colaborador selecionado
-        var selectedEmployee = employees.find(function (employee) {
-          return employee.id === selectedEmployeeId;
-        });
-
-        generatePDFForEmployee(selectedEmployee);
-      }
-    }
-
-    function generatePDFForEmployee(employee) {
-      var selectedEmployeeId = employee.id;
-      var selectedEmployeeName = employee.name;
-      var punchesFiltered = punches.filter(function (punch) {
-        return punch.employeeId === selectedEmployeeId;
-      });
-
-      var tableData = [];
-      punchesFiltered.forEach(function (punch) {
-        tableData.push([
-          punch.date,
-          punch.punchType === "entrada_manha" ? punch.time : "-",
-          punch.punchType === "saida_manha" ? punch.time : "-",
-          punch.punchType === "entrada_tarde" ? punch.time : "-",
-          punch.punchType === "saida_tarde" ? punch.time : "-",
-          punch.punchType === "extra" ? punch.time : "-",
-          punch.punchType === "horas_trabalhadas" ? punch.time : "-"
-        ]);
-      });
-
-      var style = `
-        <style>
-          h1 {
-            color: #333;
-            font-size: 24px;
-          }
-          table {
-            border-collapse: collapse;
-            width: 100%;
-          }
-          th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-          }
-          h3 {
-            font-size: 15px;
-          }
-        </style>
-      `;
-
-      var element = document.createElement("div");
-      element.innerHTML = `
-        ${style}
-        <h1>Rosseto & Araujo Transportes LTDA</h1>
-        <h2>Folha de Ponto</h2>
-        <h3>Colaborador(a): ${selectedEmployeeName}</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Data</th>
-              <th>Entrada manhã</th>
-              <th>Saída manhã</th>
-              <th>Entrada tarde</th>
-              <th>Saída tarde</th>
-              <th>Hora Extra</th>
-              <th>Horas Trabalhadas</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${tableData.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join("")}</tr>`).join("")}
-          </tbody>
-        </table>
-      `;
-
-      var filename = `folha-de-ponto-${selectedEmployeeName}.pdf`;
-
-      html2pdf()
-        .set({
-          margin: 10,
-          filename: filename,
-          image: { type: "jpeg", quality: 0.98 },
-          html2canvas: { dpi: 192, letterRendering: true },
-          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
-        })
-        .from(element)
-        .save();
-    }
-
-    function generatePDFForAllEmployees(allEmployeesData) {
-      var style = `
-        <style>
-          h1 {
-            color: #333;
-            font-size: 24px;
-          }
-          table {
-            border-collapse: collapse;
-            width: 100%;
-          }
-          th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-          }
-          h3 {
-            font-size: 15px;
-          }
-        </style>
-      `;
-
-      var element = document.createElement("div");
-      element.innerHTML = `
-        ${style}
-        <h1>Rosseto & Araujo Transportes LTDA</h1>
-        <h2>Folha de Ponto - Todos os Colaboradores</h2>
-        ${allEmployeesData.map(employeeData => `
-          <h3>Colaborador(a): ${employeeData.employeeName}</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Data</th>
-                <th>Entrada manhã</th>
-                <th>Saída manhã</th>
-                <th>Entrada tarde</th>
-                <th>Saída tarde</th>
-                <th>Hora Extra</th>
-                <th>Horas Trabalhadas</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${employeeData.tableData.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join("")}</tr>`).join("")}
-            </tbody>
-          </table>
-          <p>--------------------------------------------</p>
-        `).join("")}
-      `;
-
-      var filename = `folha-de-ponto-todos-os-colaboradores.pdf`;
-
-      html2pdf()
-        .set({
-          margin: 10,
-          filename: filename,
-          image: { type: "jpeg", quality: 0.98 },
-          html2canvas: { dpi: 192, letterRendering: true },
-          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
-        })
-        .from(element)
-        .save();
+      html2pdf().set(options).from(report).save();
     }
 
     function resetPunches() {
@@ -515,19 +438,6 @@
       localStorage.removeItem("punches");
       generateReport();
     }
-
-    function getDayOfWeek(dateString) {
-      var daysOfWeek = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
-      var dateParts = dateString.split("/");
-      var year = parseInt(dateParts[2]);
-      var month = parseInt(dateParts[1]) - 1;
-      var day = parseInt(dateParts[0]);
-      var date = new Date(year, month, day);
-      var dayOfWeek = date.getDay();
-      return daysOfWeek[dayOfWeek];
-    }
   </script>
-
 </body>
-
 </html>
