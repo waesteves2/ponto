@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt">
 <head>
@@ -142,6 +143,9 @@
         box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
     }
 
+
+    
+
   </style>
 </head>
 <body>
@@ -212,6 +216,7 @@
             saidaTarde: { inicio: '17:00', fim: '19:00' },
           },
         },
+        
         // Adicione outros colaboradores aqui...
       };
 
@@ -349,8 +354,7 @@ function registerPunch(event) {
   }
 }
 
-
-    function generateReport() {
+function generateReport() {
   var employeeSelect = document.getElementById("employee-select");
   var selectedEmployeeId = employeeSelect.value;
   var employeeReport = document.getElementById("employee-report");
@@ -365,7 +369,16 @@ function registerPunch(event) {
     table.classList.add("report-table");
 
     var headerRow = document.createElement("tr");
-    var headers = ["Data", "Dia da Semana", "Entrada Manhã", "Saída Manhã", "Entrada Tarde", "Saída Tarde", "Hora Extra", "Horas Trabalhadas"];
+    var headers = [
+      "Data",
+      "Dia da Semana",
+      "Entrada Manhã",
+      "Saída Manhã",
+      "Entrada Tarde",
+      "Saída Tarde",
+      "Horas Trabalhadas",
+      "Hora Extra"
+    ];
 
     headers.forEach(function (headerText) {
       var headerCell = document.createElement("th");
@@ -375,7 +388,7 @@ function registerPunch(event) {
 
     table.appendChild(headerRow);
 
-    var punchTypes = ["entrada_manha", "saida_manha", "entrada_tarde", "saida_tarde", "extra", "horas_trabalhadas"];
+    var punchTypes = ["entrada_manha", "saida_manha", "entrada_tarde", "saida_tarde", "horas_trabalhadas", "extra"];
 
     var firstPunchDate = punchesFiltered.length > 0 ? punchesFiltered[0].date : null;
     var lastPunchDate = punchesFiltered.length > 0 ? punchesFiltered[punchesFiltered.length - 1].date : null;
@@ -383,6 +396,8 @@ function registerPunch(event) {
     if (firstPunchDate && lastPunchDate) {
       var currentDate = moment(firstPunchDate, "DD/MM/YYYY");
       var lastPunchIndex = 0;
+      var totalHoursWorked = 0;
+      var totalExtraHours = 0;
 
       while (currentDate.isSameOrBefore(moment(lastPunchDate, "DD/MM/YYYY"))) {
         var row = document.createElement("tr");
@@ -414,10 +429,66 @@ function registerPunch(event) {
           row.appendChild(timeCell);
         });
 
+        if (currentDate.format("dddd") !== "Saturday" && currentDate.format("dddd") !== "Sunday") {
+          var entryMorning = punchesFiltered.find(function (punch) {
+            return punch.date === currentDate.format("DD/MM/YYYY") && punch.punchType === "entrada_manha";
+          });
+
+          var exitMorning = punchesFiltered.find(function (punch) {
+            return punch.date === currentDate.format("DD/MM/YYYY") && punch.punchType === "saida_manha";
+          });
+
+          var entryAfternoon = punchesFiltered.find(function (punch) {
+            return punch.date === currentDate.format("DD/MM/YYYY") && punch.punchType === "entrada_tarde";
+          });
+
+          var exitAfternoon = punchesFiltered.find(function (punch) {
+            return punch.date === currentDate.format("DD/MM/YYYY") && punch.punchType === "saida_tarde";
+          });
+
+          var workingHours = 0;
+
+          if (entryMorning && exitMorning && entryAfternoon && exitAfternoon) {
+            workingHours =
+              moment(exitMorning.time, "HH:mm").diff(moment(entryMorning.time, "HH:mm"), "hours", true) +
+              moment(exitAfternoon.time, "HH:mm").diff(moment(entryAfternoon.time, "HH:mm"), "hours", true) -
+              moment(exitMorning.time, "HH:mm").diff(moment(entryAfternoon.time, "HH:mm"), "hours", true);
+          }
+
+          var extraHours = 0;
+
+          if (exitAfternoon && exitAfternoon) {
+            extraHours = moment(exitAfternoon.time, "HH:mm").diff(moment(entryAfternoon.fim, "HH:mm"), "hours", true);
+          }
+
+          totalHoursWorked += workingHours;
+          totalExtraHours += extraHours;
+        }
+
         table.appendChild(row);
 
         currentDate.add(1, "day");
       }
+
+      var summaryRow = document.createElement("tr");
+      var summaryCell = document.createElement("td");
+      summaryCell.setAttribute("colspan", "6");
+      summaryCell.style.textAlign = "right";
+      summaryCell.style.fontWeight = "bold";
+      summaryCell.textContent = "Total de Horas Trabalhadas:";
+      summaryRow.appendChild(summaryCell);
+
+      var totalHoursCell = document.createElement("td");
+      totalHoursCell.style.fontWeight = "bold";
+      totalHoursCell.textContent = totalHoursWorked.toFixed(2);
+      summaryRow.appendChild(totalHoursCell);
+
+      var totalExtraCell = document.createElement("td");
+      totalExtraCell.style.fontWeight = "bold";
+      totalExtraCell.textContent = totalExtraHours.toFixed(2);
+      summaryRow.appendChild(totalExtraCell);
+
+      table.appendChild(summaryRow);
     }
 
     employeeReport.appendChild(table);
@@ -429,7 +500,6 @@ function registerPunch(event) {
         return employee.id === employeeId;
       });
     }
-
     function getPunchType(time, employeeId) {
   var employee = buscarColaborador(employeeId);
   var horarios = employee.horarios;
@@ -442,7 +512,7 @@ function registerPunch(event) {
     return "entrada_tarde";
   } else if (time >= horarios.saidaTarde.inicio && time <= horarios.saidaTarde.fim) {
     return "saida_tarde";
-  } else if (time > horarios.saidaTarde.fim) {
+  } else if (time > horarios.saidaTarde.fim && time < horarios.entradaTarde.inicio) {
     return "extra";
   } else {
     return "horas_trabalhadas";
@@ -476,92 +546,28 @@ function registerPunch(event) {
     }
 
     function generatePDF() {
-      var employeeSelect = document.getElementById("employee-select");
-      var selectedEmployeeId = employeeSelect.value;
+    var employeeSelect = document.getElementById("employee-select");
+    var employeeId = employeeSelect.value;
+    var employee = getEmployeeById(employeeId);
+    var reportContainer = document.getElementById("employee-report");
+    var reportHTML = reportContainer.innerHTML;
 
-      if (!selectedEmployeeId) {
-        var allEmployeesData = [];
+    if (employee) {
+      var opt = {
+        margin: 0.5,
+        filename: employee.name + "_cartao_ponto.pdf",
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
 
-        employees.forEach(function (employee) {
-          var punchesFiltered = punches.filter(function (punch) {
-            return punch.employeeId === employee.id;
-          });
-
-          var tableData = [];
-          punchesFiltered.forEach(function (punch) {
-            tableData.push([
-              punch.date,
-              punch.punchType === "entrada_manha" ? punch.time : "-",
-              punch.punchType === "saida_manha" ? punch.time : "-",
-              punch.punchType === "entrada_tarde" ? punch.time : "-",
-              punch.punchType === "saida_tarde" ? punch.time : "-",
-              punch.punchType === "extra" ? punch.time : "-",
-              punch.punchType === "horas_trabalhadas" ? punch.time : "-"
-            ]);
-          });
-
-          allEmployeesData.push({
-            name: employee.name,
-            tableData: tableData
-          });
-        });
-
-        var opt = {
-          margin: [0.5, 0.5, 0.5, 0.5],
-          filename: "folha_ponto.pdf",
-          image: { type: "jpeg", quality: 0.98 },
-          html2canvas: { scale: 2 },
-          jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
-          pagebreak: { avoid: ".report-table tr:nth-child(odd)" },
-          pagebreak: { before: ".report-table" },
-          pagebreak: { after: ".report-table" },
-          pagebreak: { avoid: ".report-table tr" }
-        };
-
-        var worker = html2pdf().set(opt).from(document.querySelector("#report")).save();
-      } else {
-        var punchesFiltered = punches.filter(function (punch) {
-          return punch.employeeId === selectedEmployeeId;
-        });
-
-        var tableData = [];
-        punchesFiltered.forEach(function (punch) {
-          tableData.push([
-            punch.date,
-            punch.punchType === "entrada_manha" ? punch.time : "-",
-            punch.punchType === "saida_manha" ? punch.time : "-",
-            punch.punchType === "entrada_tarde" ? punch.time : "-",
-            punch.punchType === "saida_tarde" ? punch.time : "-",
-            punch.punchType === "extra" ? punch.time : "-",
-            punch.punchType === "horas_trabalhadas" ? punch.time : "-"
-          ]);
-        });
-
-        var doc = new jsPDF();
-
-        doc.setFontSize(16);
-        doc.text("Folha de Ponto", 14, 10);
-        doc.setFontSize(12);
-        doc.text("Colaborador: " + getEmployeeById(selectedEmployeeId).name, 14, 20);
-        doc.autoTable({
-          startY: 30,
-          head: [["Data", "Entrada Manhã", "Saída Manhã", "Entrada Tarde", "Saída Tarde", "Hora Extra", "Horas Trabalhadas"]],
-          body: tableData,
-          styles: { fontSize: 10 },
-        });
-
-        doc.save("folha_ponto.pdf");
-      }
+      html2pdf().set(opt).from(reportHTML).save();
+    } else {
+      alert("Selecione um colaborador para gerar o relatório.");
     }
+  }
 
-    function resetPunches() {
-      punches = [];
-      localStorage.removeItem("punches");
-      generateReport();
-    }
-
-    generateReport();
-
+  generateReport();
     
   </script>
 </body>
