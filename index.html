@@ -7,7 +7,28 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
-
+  <script type="module">
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-analytics.js";
+    // TODO: Add SDKs for Firebase products that you want to use
+    // https://firebase.google.com/docs/web/setup#available-libraries
+  
+    const firebaseConfig = {
+      apiKey: "AIzaSyBLGoL2e6y_rHQQDBE3ZXYVmlQjOzcky4w",
+      authDomain: "cartao-de-ponto-f67ec.firebaseapp.com",
+      databaseURL: "https://cartao-de-ponto-f67ec-default-rtdb.firebaseio.com",
+      projectId: "cartao-de-ponto-f67ec",
+      storageBucket: "cartao-de-ponto-f67ec.appspot.com",
+      messagingSenderId: "201879232320",
+      appId: "1:201879232320:web:2b7c7a9fe183c88f66e4a5",
+      measurementId: "G-E2HPZJGR8Q"
+    };
+  
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+  </script>
   <style>
     body {
       font-family: 'Courier New', Courier, monospace;
@@ -255,32 +276,7 @@
     <span id="checkmark-text"></span>
   </div>
 
-  <script type="module">
-    // Import the functions you need from the SDKs you need
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-analytics.js";
-    // TODO: Add SDKs for Firebase products that you want to use
-    // https://firebase.google.com/docs/web/setup#available-libraries
-  
-    // Your web app's Firebase configuration
-    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-    const firebaseConfig = {
-      apiKey: "AIzaSyBLGoL2e6y_rHQQDBE3ZXYVmlQjOzcky4w",
-      authDomain: "cartao-de-ponto-f67ec.firebaseapp.com",
-      databaseURL: "https://cartao-de-ponto-f67ec-default-rtdb.firebaseio.com",
-      projectId: "cartao-de-ponto-f67ec",
-      storageBucket: "cartao-de-ponto-f67ec.appspot.com",
-      messagingSenderId: "201879232320",
-      appId: "1:201879232320:web:2b7c7a9fe183c88f66e4a5",
-      measurementId: "G-E2HPZJGR8Q"
-    };
-  
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
-  </script>
-
-  <script>
+   <script>
 
 
     var resetButton = document.getElementById("reset-button");
