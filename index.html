@@ -7,10 +7,29 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/locale/pt-br.js"></script>
-
- 
+  
+  <script type="module">
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-analytics.js";
+    // TODO: Add SDKs for Firebase products that you want to use
+    // https://firebase.google.com/docs/web/setup#available-libraries
+  
+    const firebaseConfig = {
+      apiKey: "AIzaSyBLGoL2e6y_rHQQDBE3ZXYVmlQjOzcky4w",
+      authDomain: "cartao-de-ponto-f67ec.firebaseapp.com",
+      databaseURL: "https://cartao-de-ponto-f67ec-default-rtdb.firebaseio.com",
+      projectId: "cartao-de-ponto-f67ec",
+      storageBucket: "cartao-de-ponto-f67ec.appspot.com",
+      messagingSenderId: "201879232320",
+      appId: "1:201879232320:web:2b7c7a9fe183c88f66e4a5",
+      measurementId: "G-E2HPZJGR8Q"
+    };
+  
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+  </script>
   <style>
     body {
       font-family: 'Courier New', Courier, monospace;
@@ -217,30 +236,6 @@
 
 <body>
 
-  <script type="module">
-    // Import the functions you need from the SDKs you need
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js";
-    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-analytics.js";
-    // TODO: Add SDKs for Firebase products that you want to use
-    // https://firebase.google.com/docs/web/setup#available-libraries
-  
-    const firebaseConfig = {
-      apiKey: "AIzaSyBLGoL2e6y_rHQQDBE3ZXYVmlQjOzcky4w",
-      authDomain: "cartao-de-ponto-f67ec.firebaseapp.com",
-      databaseURL: "https://cartao-de-ponto-f67ec-default-rtdb.firebaseio.com",
-      projectId: "cartao-de-ponto-f67ec",
-      storageBucket: "cartao-de-ponto-f67ec.appspot.com",
-      messagingSenderId: "201879232320",
-      appId: "1:201879232320:web:2b7c7a9fe183c88f66e4a5",
-      measurementId: "G-E2HPZJGR8Q"
-    };
-  
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
-  </script>
-
-
   <div id="punch-in-out">
     <label for="employee-id">Código de Matrícula:</label><br>
     <input type="text" id="employee-id" autofocus onkeydown="registerPunch(event)">
@@ -284,13 +279,6 @@
 
    <script>
 
-     function getWeekdayName(dateString) {
-    var weekdays = ['Domingo', '2ª feira', '3ª feira', '4ª feira', '5ª feira', '6ª feira', 'Sábado'];
-    var date = moment(dateString, 'DD/MM/YYYY');
-    var dayOfWeek = date.day();
-    return weekdays[dayOfWeek];
-  }
-
 
     var resetButton = document.getElementById("reset-button");
 
@@ -319,7 +307,7 @@
           cpf: '401.260.068-06',
           horarios: {
             entradaManha: { inicio: '07:00', fim: '09:30' },
-            saidaManha: { inicio: '11:00', fim: '12:50' },
+            saidaManha: { inicio: '11:00', fim: '12:20' },
             entradaTarde: { inicio: '13:00', fim: '15:00' },
             saidaTarde: { inicio: '16:00', fim: '22:30' },
           },
@@ -484,6 +472,7 @@
           "Horas Trabalhadas",
           "Horas Extras",
           "Horas Ausentes",
+          "Editar", 
         ];
 
         headers.forEach(function (headerText) {
@@ -506,12 +495,12 @@
       var row = document.createElement("tr");
 
             var dateCell = document.createElement("td");
-      dateCell.textContent = currentDate.format("DD/MM/YY"); // Formata a data para "24/07/23"
+            dateCell.textContent = currentDate.format("DD/MM/YYYY");
             row.appendChild(dateCell);
 
             var dayOfWeekCell = document.createElement("td");
-            dayOfWeekCell.textContent = getWeekdayName(currentDate.format("DD/MM/YYYY"));
-        row.appendChild(dayOfWeekCell);
+            dayOfWeekCell.textContent = currentDate.format("dddd");
+            row.appendChild(dayOfWeekCell);
 
             var entryMorningCell = document.createElement("td");
             var exitMorningCell = document.createElement("td");
@@ -529,11 +518,11 @@
             totalHoursCell.textContent = "-";
             extraHoursCell.textContent = "-";
             absentHoursCell.textContent = "-";
-            editCell.textContent = "Editar"; // Texto do botão "Editar"
-editCell.classList.add("edit-button");
-editCell.setAttribute("data-date", currentDate.format("DD/MM/YYYY"));
-editCell.setAttribute("data-employeeId", selectedEmployeeId);
-editCell.onclick = openEditModal; // Função para abrir o modal de edição
+            editCell.textContent = "Editar"; // Text for edit button
+            editCell.classList.add("edit-button");
+            editCell.setAttribute("data-date", currentDate.format("DD/MM/YYYY"));
+            editCell.setAttribute("data-employeeId", selectedEmployeeId);
+            editCell.onclick = openEditModal; // Function to open the edit modal
 
             var morningEntry = punchesFiltered.find(function (punch) {
               return punch.date === currentDate.format("DD/MM/YYYY") && punch.punchType === "entrada_manha";
@@ -694,9 +683,6 @@ editCell.onclick = openEditModal; // Função para abrir o modal de edição
     }
 
     function addInfoToPDF(tempContainer) {
-
-
-      
       // Informações da empresa
       var logoImg = document.createElement("img");
       logoImg.src = "./Logo Rosseto.jpg"; // Substitua pelo caminho correto da imagem do logo
@@ -720,26 +706,9 @@ editCell.onclick = openEditModal; // Função para abrir o modal de edição
 
 
 
-    function addInfoToPDF(tempContainer) {
-      // Informações da empresa
-      var logoImg = document.createElement("img");
-      logoImg.src = "./Logo Rosseto.jpg"; // Substitua pelo caminho correto da imagem do logo
-      logoImg.width = 180;
-      tempContainer.appendChild(logoImg);
-
-      var companyName = document.createElement("h2");
-      companyName.innerText = "Rosseto & Araujo Transportes LTDA ME";
-      companyName.style.textAlign = "center";
-      companyName.style.fontSize = "18px";
-      tempContainer.appendChild(companyName);
-
-      var cnpj = document.createElement("h3");
-      cnpj.innerText = "CNPJ: 08.712.160/0001-75";
-      cnpj.style.fontSize = "15px";
-      tempContainer.appendChild(cnpj);
-    }
-
     function addEmployeeInfoToPDF(tempContainer, colaborador) {
+
+      
       // Linha para assinatura
       var signatureLine = document.createElement("p");
       signatureLine.innerText = "______________________________"; // Pode usar underline ou outra representação gráfica
@@ -752,18 +721,12 @@ editCell.onclick = openEditModal; // Função para abrir o modal de edição
       tempContainer.appendChild(employeeName);
 
       var cpf = document.createElement("h3");
-      cpf.innerText = `CPF:${colaborador.cpf}`; // CPF do colaborador
-      cpf.style.fontSize = "15.4px"
+      cpf.innerText = `CPF: ${colaborador.cpf}`; // CPF do colaborador
+      cpf.style.fontSize = "13px"
       tempContainer.appendChild(cpf);
     }
 
     function generatePDF() {
-      // Remover os botões "Editar" antes de gerar o PDF
-      var editButtons = document.getElementsByClassName("edit-button");
-      for (var i = 0; i < editButtons.length; i++) {
-        editButtons[i].style.display = "none";
-      }
-
       const selectedEmployeeId = document.getElementById("employee-select").value;
 
       if (selectedEmployeeId) {
@@ -788,7 +751,7 @@ editCell.onclick = openEditModal; // Função para abrir o modal de edição
           if (reportContainer) {
             var reportContent = document.createElement("div");
             reportContent.innerHTML = reportContainer.innerHTML;
-            reportContent.style.fontSize = "11px";
+            reportContent.style.fontSize = "10px";
             reportContent.style.textAlign = "center";
             reportContent.style.fontFamily = "Courier New', Courier, monospace";
             tempContainer.appendChild(reportContent);
@@ -804,19 +767,10 @@ editCell.onclick = openEditModal; // Função para abrir o modal de edição
 
             // Gera novamente o PDF com as informações do colaborador adicionadas
             html2pdf().from(tempContainer).set(opt).save();
-
-            // Adicionar o trecho do setTimeout para adicionar os botões "Editar" após a geração do PDF
-            setTimeout(function() {
-              var editButtons = document.getElementsByClassName("edit-button");
-              for (var i = 0; i < editButtons.length; i++) {
-                editButtons[i].style.display = "table-cell"; // ou "block", dependendo do seu layout
-              }
-            }, 100); // Tempo para aguardar a geração do PDF antes de adicionar novamente os botões
           });
         }
       }
     }
-    
     // Função para abrir o modal de edição
      function openEditModal(event) {
     var date = event.target.getAttribute("data-date");
@@ -980,6 +934,49 @@ editCell.onclick = openEditModal; // Função para abrir o modal de edição
       }
     }
   }
+
+function formatCell(cellValue, isWeekendOrHoliday) {
+  if (isWeekendOrHoliday) {
+    // Formatação para sábado, domingo e feriados
+    var hours = Math.floor(cellValue / 3600);
+    var minutes = Math.floor((cellValue % 3600) / 60);
+    var seconds = cellValue % 60;
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  } else {
+    // Formatação para os demais dias
+    var date = new Date(cellValue * 1000);
+    var day = String(date.getDate()).padStart(2, '0');
+    var month = String(date.getMonth() + 1).padStart(2, '0');
+    var year = String(date.getFullYear()).slice(-2);
+    return `${day}/${month}/${year}`;
+  }
+}
+
+function addCellToRow(row, cellValue, isWeekendOrHoliday) {
+  var cell = document.createElement("td");
+  cell.textContent = formatCell(cellValue, isWeekendOrHoliday);
+  row.appendChild(cell);
+}
+
+function generateReportTable() {
+  // Restante do código...
+
+  for (var i = 0; i < employeeData.length; i++) {
+    var row = document.createElement("tr");
+    addCellToRow(row, i + 1); // Número da linha
+    addCellToRow(row, employeeData[i].name); // Nome do colaborador
+
+    // Demais células representando as horas trabalhadas e ausentes para cada dia
+    for (var j = 0; j < days.length; j++) {
+      var cellValue = employeeData[i].hours[days[j]];
+      var isWeekendOrHoliday = days[j] === "Sabado" || days[j] === "Domingo" || isHoliday(day, month, year);
+      addCellToRow(row, cellValue, isWeekendOrHoliday);
+    }
+
+    tableBody.appendChild(row);
+  }
+}
+
 
 
   </script>
