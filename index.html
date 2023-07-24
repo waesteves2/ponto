@@ -1,14 +1,16 @@
 
 <!DOCTYPE html>
 <html lang="pt">
-<head>
   <title>Cartão de Ponto</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+
   <style>
     body {
-      font-family:'Courier New', Courier, monospace
+      font-family: 'Courier New', Courier, monospace;
     }
 
     h1 {
@@ -33,11 +35,14 @@
       border-collapse: collapse;
       font-size: small;
 
+
     }
 
     #report table th,
     #report table td {
       border: 1px solid #000;
+      
+
     }
 
     #employee-id {
@@ -60,10 +65,12 @@
         transform: scale(0);
         opacity: 0;
       }
+
       50% {
         transform: scale(1.2);
         opacity: 1;
       }
+
       100% {
         transform: scale(1);
         opacity: 0;
@@ -73,6 +80,7 @@
     #employee-report {
       text-align: center;
       font-size: 18px;
+
     }
 
     #reset-button {
@@ -109,52 +117,107 @@
     }
 
     button {
-  padding: 10px 20px;
-  background-color: #0984e3;
-  color: #ffffff;
-  border: none;
-  border-radius: 4px;
-  font-family: 'Arial', sans-serif;
-  font-size: 14px;
-  cursor: pointer;
-  margin-right: 10px;
-}
+      padding: 10px 20px;
+      background-color: #0984e3;
+      color: #ffffff;
+      border: none;
+      border-radius: 4px;
+      font-family: 'Arial', sans-serif;
+      font-size: 14px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
 
-#reset-button {
-  background-color: #d63031;
-}
+    #reset-button {
+      background-color: #d63031;
+    }
 
-#employee-select {
-        width: 230px;
-        padding: 10px;
-        font-size: 16px;
-        border: 1px solid #ccc;
-        border-radius: 3px;
+    #employee-select {
+      width: 230px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      padding: 8px;
     }
 
     #employee-report {
-        padding: 10px;
+      padding: 10px;
     }
 
     #report {
-        background-color: #f5f5f5;
-        padding: 20px;
-        border-radius: 5px;
-        box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
+      background-color: #f5f5f5;
+      border-radius: 5px;
+      box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
+      
+    }
+
+    .absent {
+      background-color: #ffcccc;
+      color: #d63031;
     }
 
 
-    
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+    }
+
+    .modal-content {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: white;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .close-button {
+  position: absolute;
+  top: 3px;
+  font-size: 35px;
+  cursor: pointer;
+  color: #d63031;
+ 
+}
+
+    .edit-table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    .edit-table th,
+    .edit-table td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+
+    .edit-table input:invalid {
+      border: 1px solid red;
+    }
+
+
+    .day-of-week {
+  color: red;
+}
 
   </style>
 </head>
+
 <body>
 
   <div id="punch-in-out">
     <label for="employee-id">Código de Matrícula:</label><br>
     <input type="text" id="employee-id" autofocus onkeydown="registerPunch(event)">
   </div>
-
   <div id="report">
     <h2>Cartão de Ponto</h2>
     <select id="employee-select" onchange="generateReport()">
@@ -167,13 +230,59 @@
     <button id="reset-button" onclick="confirmReset()">Resetar</button>
   </div>
 
+
+  <div id="edit-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-button" onclick="closeEditModal()">&times;</span>
+      <h2>Editar Horários</h2>
+    <p>Data: <span id="edit-date"></span></p>
+    <p>ID do funcionário: <span id="edit-employeeId"></span></p>
+    <label>Entrada Manhã:</label><br>
+    <input type="text" id="edit-entryMorning" /><br>
+    <label>Saída Manhã:</label><br>
+    <input type="text" id="edit-exitMorning" /><br>
+    <label>Entrada Tarde:</label><br>
+    <input type="text" id="edit-entryAfternoon" /><br>
+    <label>Saída Tarde:</label><br>
+    <input type="text" id="edit-exitAfternoon" /><br><br>
+    <button onclick="saveEdit()">Salvar</button>
+    </div>
+   </div>
+
   <!-- Container da imagem do checkmark -->
   <div id="checkmark-wrapper" class="checkmark-wrapper" style="display: none;">
     <img id="checkmark-image" src="https://imagepng.org/wp-content/uploads/2019/12/check-icone-3.png" alt="Checkmark">
     <span id="checkmark-text"></span>
   </div>
 
+  <script type="module">
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-analytics.js";
+    // TODO: Add SDKs for Firebase products that you want to use
+    // https://firebase.google.com/docs/web/setup#available-libraries
+  
+    // Your web app's Firebase configuration
+    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+    const firebaseConfig = {
+      apiKey: "AIzaSyBLGoL2e6y_rHQQDBE3ZXYVmlQjOzcky4w",
+      authDomain: "cartao-de-ponto-f67ec.firebaseapp.com",
+      databaseURL: "https://cartao-de-ponto-f67ec-default-rtdb.firebaseio.com",
+      projectId: "cartao-de-ponto-f67ec",
+      storageBucket: "cartao-de-ponto-f67ec.appspot.com",
+      messagingSenderId: "201879232320",
+      appId: "1:201879232320:web:2b7c7a9fe183c88f66e4a5",
+      measurementId: "G-E2HPZJGR8Q"
+    };
+  
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+  </script>
+
   <script>
+
+
     var resetButton = document.getElementById("reset-button");
 
     function confirmReset() {
@@ -203,7 +312,7 @@
             entradaManha: { inicio: '07:00', fim: '09:30' },
             saidaManha: { inicio: '11:00', fim: '12:20' },
             entradaTarde: { inicio: '13:00', fim: '15:00' },
-            saidaTarde: { inicio: '17:00', fim: '20:30' },
+            saidaTarde: { inicio: '16:00', fim: '22:30' },
           },
         },
         '002': {
@@ -213,10 +322,10 @@
             entradaManha: { inicio: '07:00', fim: '09:30' },
             saidaManha: { inicio: '11:00', fim: '12:20' },
             entradaTarde: { inicio: '13:00', fim: '15:00' },
-            saidaTarde: { inicio: '17:00', fim: '19:00' },
+            saidaTarde: { inicio: '17:00', fim: '20:00' },
           },
         },
-        
+
         // Adicione outros colaboradores aqui...
       };
 
@@ -239,7 +348,8 @@
       alert("Seu navegador não suporta o recurso de Local Storage. Por favor, atualize-o.");
     }
 
-   function registerPunch(event) {
+    
+    function registerPunch(event) {
   if (event.keyCode === 13) {
     var employeeId = document.getElementById("employee-id").value;
     var employee = getEmployeeById(employeeId);
@@ -284,240 +394,270 @@
           time: time,
           punchType: punchType
         });
-      }
 
-      localStorage.setItem("punches", JSON.stringify(punches));
-      document.getElementById("employee-id").value = "";
+        // Check if it's a weekend (Saturday or Sunday)
+        var currentDayOfWeek = new Date().getDay();
+        var isWeekend = currentDayOfWeek === 0 || currentDayOfWeek === 6;
 
-      showCheckmark(employee.name);
-      generateReport();
-    } else {
-      alert("Colaborador não encontrado. Verifique o código de matrícula digitado.");
-    }
-  }
-}
-function registerPunch(event) {
-  if (event.keyCode === 13) {
-    var employeeId = document.getElementById("employee-id").value;
-    var employee = getEmployeeById(employeeId);
+        // If it's not a weekend, add the Saturday and Sunday entries
+        if (!isWeekend) {
+          var saturdayEntryTime = moment(employee.horarios.entradaManha.inicio, "HH:mm").add(1, "day").format("HH:mm");
+          var saturdayExitTime = moment(employee.horarios.saidaManha.fim, "HH:mm").add(1, "day").format("HH:mm");
+          var sundayEntryTime = moment(employee.horarios.entradaManha.inicio, "HH:mm").add(2, "day").format("HH:mm");
+          var sundayExitTime = moment(employee.horarios.saidaManha.fim, "HH:mm").add(2, "day").format("HH:mm");
 
-    if (employee) {
-      var date = new Date().toLocaleDateString();
-      var time = new Date().toLocaleTimeString();
-
-      var punchType = getPunchType(time, employeeId);
-      var lastPunch = getLastPunch(employeeId);
-
-      if (lastPunch && lastPunch.date === date) {
-        // Atualiza o registro existente caso seja do mesmo dia
-        if (punchType === "entrada_manha" && lastPunch.punchType === "entrada_manha") {
-          lastPunch.time = time;
-        } else if (punchType === "saida_manha" && lastPunch.punchType === "saida_manha") {
-          lastPunch.time = time;
-        } else if (punchType === "entrada_tarde" && lastPunch.punchType === "entrada_tarde") {
-          lastPunch.time = time;
-        } else if (punchType === "saida_tarde" && lastPunch.punchType === "saida_tarde") {
-          lastPunch.time = time;
-        } else if (punchType === "extra" && lastPunch.punchType === "extra") {
-          lastPunch.time = time;
-        } else if (punchType === "horas_trabalhadas" && lastPunch.punchType === "horas_trabalhadas") {
-          lastPunch.time = time;
-        } else {
-          // Adiciona um novo registro na célula do lado
-          punches.splice(punches.indexOf(lastPunch) + 1, 0, {
-            employeeId: employeeId,
-            employeeName: employee.name,
-            date: date,
-            time: time,
-            punchType: punchType
-          });
-        }
-      } else {
-        // Adiciona um novo registro
-        punches.push({
-          employeeId: employeeId,
-          employeeName: employee.name,
-          date: date,
-          time: time,
-          punchType: punchType
-        });
-      }
-
-      localStorage.setItem("punches", JSON.stringify(punches));
-      document.getElementById("employee-id").value = "";
-
-      showCheckmark(employee.name);
-      generateReport();
-    } else {
-      alert("Colaborador não encontrado. Verifique o código de matrícula digitado.");
-    }
-  }
-}
-
-function generateReport() {
-  var employeeSelect = document.getElementById("employee-select");
-  var selectedEmployeeId = employeeSelect.value;
-  var employeeReport = document.getElementById("employee-report");
-  employeeReport.innerHTML = "";
-
-  if (selectedEmployeeId) {
-    var punchesFiltered = punches.filter(function (punch) {
-      return punch.employeeId === selectedEmployeeId;
-    });
-
-    var table = document.createElement("table");
-    table.classList.add("report-table");
-
-    var headerRow = document.createElement("tr");
-    var headers = [
-      "Data",
-      "Dia da Semana",
-      "Entrada Manhã",
-      "Saída Manhã",
-      "Entrada Tarde",
-      "Saída Tarde",
-      "Horas Trabalhadas",
-      "Hora Extra"
-    ];
-
-    headers.forEach(function (headerText) {
-      var headerCell = document.createElement("th");
-      headerCell.textContent = headerText;
-      headerRow.appendChild(headerCell);
-    });
-
-    table.appendChild(headerRow);
-
-    var punchTypes = ["entrada_manha", "saida_manha", "entrada_tarde", "saida_tarde", "horas_trabalhadas", "extra"];
-
-    var firstPunchDate = punchesFiltered.length > 0 ? punchesFiltered[0].date : null;
-    var lastPunchDate = punchesFiltered.length > 0 ? punchesFiltered[punchesFiltered.length - 1].date : null;
-
-    if (firstPunchDate && lastPunchDate) {
-      var currentDate = moment(firstPunchDate, "DD/MM/YYYY");
-      var lastPunchIndex = 0;
-      var totalHoursWorked = 0;
-      var totalExtraHours = 0;
-
-      while (currentDate.isSameOrBefore(moment(lastPunchDate, "DD/MM/YYYY"))) {
-        var row = document.createElement("tr");
-
-        var dateCell = document.createElement("td");
-        dateCell.textContent = currentDate.format("DD/MM/YYYY");
-        row.appendChild(dateCell);
-
-        var dayOfWeekCell = document.createElement("td");
-        dayOfWeekCell.textContent = currentDate.format("dddd");
-        row.appendChild(dayOfWeekCell);
-
-        punchTypes.forEach(function (punchType) {
-          var timeCell = document.createElement("td");
-
-          if (lastPunchIndex < punchesFiltered.length) {
-            var punch = punchesFiltered[lastPunchIndex];
-
-            if (punch.date === currentDate.format("DD/MM/YYYY") && punch.punchType === punchType) {
-              timeCell.textContent = punch.time;
-              lastPunchIndex++;
-            } else {
-              timeCell.textContent = "-";
+          punches.push(
+            {
+              employeeId: employeeId,
+              employeeName: employee.name,
+              date: moment().add(1, "day").format("DD/MM/YYYY"),
+              time: saturdayEntryTime,
+              punchType: "entrada_manha"
+            },
+            {
+              employeeId: employeeId,
+              employeeName: employee.name,
+              date: moment().add(1, "day").format("DD/MM/YYYY"),
+              time: saturdayExitTime,
+              punchType: "saida_manha"
+            },
+            {
+              employeeId: employeeId,
+              employeeName: employee.name,
+              date: moment().add(2, "day").format("DD/MM/YYYY"),
+              time: sundayEntryTime,
+              punchType: "entrada_manha"
+            },
+            {
+              employeeId: employeeId,
+              employeeName: employee.name,
+              date: moment().add(2, "day").format("DD/MM/YYYY"),
+              time: sundayExitTime,
+              punchType: "saida_manha"
             }
-          } else {
-            timeCell.textContent = "-";
-          }
-
-          row.appendChild(timeCell);
-        });
-
-        if (currentDate.format("dddd") !== "Saturday" && currentDate.format("dddd") !== "Sunday") {
-          var entryMorning = punchesFiltered.find(function (punch) {
-            return punch.date === currentDate.format("DD/MM/YYYY") && punch.punchType === "entrada_manha";
-          });
-
-          var exitMorning = punchesFiltered.find(function (punch) {
-            return punch.date === currentDate.format("DD/MM/YYYY") && punch.punchType === "saida_manha";
-          });
-
-          var entryAfternoon = punchesFiltered.find(function (punch) {
-            return punch.date === currentDate.format("DD/MM/YYYY") && punch.punchType === "entrada_tarde";
-          });
-
-          var exitAfternoon = punchesFiltered.find(function (punch) {
-            return punch.date === currentDate.format("DD/MM/YYYY") && punch.punchType === "saida_tarde";
-          });
-
-          var workingHours = 0;
-
-          if (entryMorning && exitMorning && entryAfternoon && exitAfternoon) {
-            workingHours =
-              moment(exitMorning.time, "HH:mm").diff(moment(entryMorning.time, "HH:mm"), "hours", true) +
-              moment(exitAfternoon.time, "HH:mm").diff(moment(entryAfternoon.time, "HH:mm"), "hours", true) -
-              moment(exitMorning.time, "HH:mm").diff(moment(entryAfternoon.time, "HH:mm"), "hours", true);
-          }
-
-          var extraHours = 0;
-
-          if (exitAfternoon && exitAfternoon) {
-            extraHours = moment(exitAfternoon.time, "HH:mm").diff(moment(entryAfternoon.fim, "HH:mm"), "hours", true);
-          }
-
-          totalHoursWorked += workingHours;
-          totalExtraHours += extraHours;
+          );
         }
-
-        table.appendChild(row);
-
-        currentDate.add(1, "day");
       }
 
-      var summaryRow = document.createElement("tr");
-      var summaryCell = document.createElement("td");
-      summaryCell.setAttribute("colspan", "6");
-      summaryCell.style.textAlign = "right";
-      summaryCell.style.fontWeight = "bold";
-      summaryCell.textContent = "Total de Horas Trabalhadas:";
-      summaryRow.appendChild(summaryCell);
+      localStorage.setItem("punches", JSON.stringify(punches));
+      document.getElementById("employee-id").value = "";
 
-      var totalHoursCell = document.createElement("td");
-      totalHoursCell.style.fontWeight = "bold";
-      totalHoursCell.textContent = totalHoursWorked.toFixed(2);
-      summaryRow.appendChild(totalHoursCell);
-
-      var totalExtraCell = document.createElement("td");
-      totalExtraCell.style.fontWeight = "bold";
-      totalExtraCell.textContent = totalExtraHours.toFixed(2);
-      summaryRow.appendChild(totalExtraCell);
-
-      table.appendChild(summaryRow);
+      showCheckmark(employee.name);
+      generateReport();
+    } else {
+      alert("Colaborador não encontrado. Verifique o código de matrícula digitado.");
     }
-
-    employeeReport.appendChild(table);
   }
 }
 
+    function generateReport() {
+      var employeeSelect = document.getElementById("employee-select");
+      var selectedEmployeeId = employeeSelect.value;
+      var employeeReport = document.getElementById("employee-report");
+      employeeReport.innerHTML = "";
+
+      if (selectedEmployeeId) {
+        var punchesFiltered = punches.filter(function (punch) {
+          return punch.employeeId === selectedEmployeeId;
+        });
+
+        var table = document.createElement("table");
+        table.classList.add("report-table");
+
+        var headerRow = document.createElement("tr");
+        var headers = [
+          "Data",
+          "Dia da Semana",
+          "Entrada Manhã",
+          "Saída Manhã",
+          "Entrada Tarde",
+          "Saída Tarde",
+          "Horas Trabalhadas",
+          "Horas Extras",
+          "Horas Ausentes",
+          "Editar", 
+        ];
+
+        headers.forEach(function (headerText) {
+          var headerCell = document.createElement("th");
+          headerCell.textContent = headerText;
+          headerRow.appendChild(headerCell);
+        });
+
+        table.appendChild(headerRow);
+
+        var expectedWorkingHours = 8 * 3600 + 48 * 60; // 8 hours and 48 minutes in seconds
+
+        var firstPunchDate = punchesFiltered.length > 0 ? punchesFiltered[0].date : null;
+        var lastPunchDate = punchesFiltered.length > 0 ? punchesFiltered[punchesFiltered.length - 1].date : null;
+
+        if (firstPunchDate && lastPunchDate) {
+          var currentDate = moment(firstPunchDate, "DD/MM/YYYY");
+          
+          while (currentDate.isSameOrBefore(moment(lastPunchDate, "DD/MM/YYYY"))) {
+      var row = document.createElement("tr");
+
+            var dateCell = document.createElement("td");
+            dateCell.textContent = currentDate.format("DD/MM/YYYY");
+            row.appendChild(dateCell);
+
+            var dayOfWeekCell = document.createElement("td");
+            dayOfWeekCell.textContent = currentDate.format("dddd");
+            row.appendChild(dayOfWeekCell);
+
+            var entryMorningCell = document.createElement("td");
+            var exitMorningCell = document.createElement("td");
+            var entryAfternoonCell = document.createElement("td");
+            var exitAfternoonCell = document.createElement("td");
+            var totalHoursCell = document.createElement("td");
+            var extraHoursCell = document.createElement("td");
+            var absentHoursCell = document.createElement("td");
+            var editCell = document.createElement("td"); // New cell for edit button
+
+            entryMorningCell.textContent = "-";
+            exitMorningCell.textContent = "-";
+            entryAfternoonCell.textContent = "-";
+            exitAfternoonCell.textContent = "-";
+            totalHoursCell.textContent = "-";
+            extraHoursCell.textContent = "-";
+            absentHoursCell.textContent = "-";
+            editCell.textContent = "Editar"; // Text for edit button
+            editCell.classList.add("edit-button");
+            editCell.setAttribute("data-date", currentDate.format("DD/MM/YYYY"));
+            editCell.setAttribute("data-employeeId", selectedEmployeeId);
+            editCell.onclick = openEditModal; // Function to open the edit modal
+
+            var morningEntry = punchesFiltered.find(function (punch) {
+              return punch.date === currentDate.format("DD/MM/YYYY") && punch.punchType === "entrada_manha";
+            });
+
+            var morningExit = punchesFiltered.find(function (punch) {
+              return punch.date === currentDate.format("DD/MM/YYYY") && punch.punchType === "saida_manha";
+            });
+
+            var afternoonEntry = punchesFiltered.find(function (punch) {
+              return punch.date === currentDate.format("DD/MM/YYYY") && punch.punchType === "entrada_tarde";
+            });
+
+            var afternoonExit = punchesFiltered.find(function (punch) {
+              return punch.date === currentDate.format("DD/MM/YYYY") && punch.punchType === "saida_tarde";
+            });
+
+            if (morningEntry) {
+              entryMorningCell.textContent = morningEntry.time;
+            }
+
+            if (morningExit) {
+              exitMorningCell.textContent = morningExit.time;
+            }
+
+            if (afternoonEntry) {
+              entryAfternoonCell.textContent = afternoonEntry.time;
+            }
+
+            if (afternoonExit) {
+              exitAfternoonCell.textContent = afternoonExit.time;
+            }
+
+            var totalMorningSeconds = 0;
+            var totalAfternoonSeconds = 0;
+
+            if (entryMorningCell.textContent !== "-" && exitMorningCell.textContent !== "-") {
+              var morningEntryTime = moment(entryMorningCell.textContent, "HH:mm");
+              var morningExitTime = moment(exitMorningCell.textContent, "HH:mm");
+              totalMorningSeconds = morningExitTime.diff(morningEntryTime, "seconds");
+            }
+
+            if (entryAfternoonCell.textContent !== "-" && exitAfternoonCell.textContent !== "-") {
+              var afternoonEntryTime = moment(entryAfternoonCell.textContent, "HH:mm");
+              var afternoonExitTime = moment(exitAfternoonCell.textContent, "HH:mm");
+              totalAfternoonSeconds = afternoonExitTime.diff(afternoonEntryTime, "seconds");
+            }
+
+            var totalSeconds = totalMorningSeconds + totalAfternoonSeconds;
+            var extraSeconds = totalSeconds - expectedWorkingHours;
+
+            totalHoursCell.textContent = secondsToTimeString(totalSeconds);
+            extraHoursCell.textContent = extraSeconds > 0 ? secondsToTimeString(extraSeconds) : "00:00:00";
+
+            // Calculate absent hours for morning and afternoon separately
+            var absentSeconds = expectedWorkingHours - totalSeconds;
+
+            if (absentSeconds > 0) {
+              absentHoursCell.textContent = secondsToTimeString(absentSeconds);
+              absentHoursCell.classList.add("absent");
+            } else {
+              absentHoursCell.textContent = "00:00:00";
+              absentHoursCell.classList.remove("absent");
+            }
+
+            if (currentDate.day() === 0 || currentDate.day() === 6) {
+        row.classList.add("day-of-week"); // Apply the red color to Saturdays (6) and Sundays (0)
+      }
+
+            row.appendChild(dateCell);
+            row.appendChild(dayOfWeekCell);
+            row.appendChild(entryMorningCell);
+            row.appendChild(exitMorningCell);
+            row.appendChild(entryAfternoonCell);
+            row.appendChild(exitAfternoonCell);
+            row.appendChild(totalHoursCell);
+            row.appendChild(extraHoursCell);
+            row.appendChild(absentHoursCell);
+            row.appendChild(editCell); // Add edit button cell to the row
+
+            table.appendChild(row);
+
+            currentDate.add(1, "day");
+          }
+        }
+
+        employeeReport.appendChild(table);
+      }
+    }
+
+    function secondsToTimeString(totalSeconds) {
+      var hours = Math.floor(totalSeconds / 3600);
+      var minutes = Math.floor((totalSeconds % 3600) / 60);
+      var seconds = totalSeconds % 60;
+      return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+    }
+
+    // Function to open the edit modal
+    function openEditModal(event) {
+      var date = event.target.getAttribute("data-date");
+      var employeeId = event.target.getAttribute("data-employeeId");
+
+      // Implement your edit modal here, where administrators can make necessary adjustments to the punches for the selected date and employeeId.
+      // You can show the existing punch data for the selected date and employeeId in the modal, and allow administrators to make changes and save them.
+      // Once the edits are saved, you can update the "punches" array and regenerate the report.
+      // Remember to handle any validations or restrictions you want to apply during the editing process.
+
+      console.log("Edit button clicked for date:", date, "and employeeId:", employeeId);
+    }
     function getEmployeeById(employeeId) {
       return employees.find(function (employee) {
         return employee.id === employeeId;
       });
     }
     function getPunchType(time, employeeId) {
-  var employee = buscarColaborador(employeeId);
-  var horarios = employee.horarios;
+      var employee = buscarColaborador(employeeId);
+      var horarios = employee.horarios;
 
-  if (time >= horarios.entradaManha.inicio && time <= horarios.entradaManha.fim) {
-    return "entrada_manha";
-  } else if (time >= horarios.saidaManha.inicio && time <= horarios.saidaManha.fim) {
-    return "saida_manha";
-  } else if (time >= horarios.entradaTarde.inicio && time <= horarios.entradaTarde.fim) {
-    return "entrada_tarde";
-  } else if (time >= horarios.saidaTarde.inicio && time <= horarios.saidaTarde.fim) {
-    return "saida_tarde";
-  } else if (time > horarios.saidaTarde.fim && time < horarios.entradaTarde.inicio) {
-    return "extra";
-  } else {
-    return "horas_trabalhadas";
-  }
-}
+      if (time >= horarios.entradaManha.inicio && time <= horarios.entradaManha.fim) {
+        return "entrada_manha";
+      } else if (time >= horarios.saidaManha.inicio && time <= horarios.saidaManha.fim) {
+        return "saida_manha";
+      } else if (time >= horarios.entradaTarde.inicio && time <= horarios.entradaTarde.fim) {
+        return "entrada_tarde";
+      } else if (time >= horarios.saidaTarde.inicio && time <= horarios.saidaTarde.fim) {
+        return "saida_tarde";
+      } else if (time > horarios.saidaTarde.fim && time < horarios.entradaTarde.inicio) {
+        return "extra";
+      } else {
+        return "horas_trabalhadas";
+      }
+    }
 
 
     function getLastPunch(employeeId) {
@@ -545,30 +685,267 @@ function generateReport() {
       }, 3000);
     }
 
+    function addInfoToPDF(tempContainer) {
+      // Informações da empresa
+      var logoImg = document.createElement("img");
+      logoImg.src = "./Logo Rosseto.jpg"; // Substitua pelo caminho correto da imagem do logo
+      logoImg.width = 150;
+      tempContainer.appendChild(logoImg);
+
+      var companyName = document.createElement("h2");
+      companyName.innerText = "Rosseto & Araujo Transportes LTDA ME";
+      companyName.style.textAlign = "center";
+      companyName.style.fontSize = "15px";
+      tempContainer.appendChild(companyName);
+
+      var cnpj = document.createElement("h3");
+      cnpj.innerText = "CNPJ: 08.712.160/0001-75";
+      cnpj.style.fontSize = "10px";
+      tempContainer.appendChild(cnpj);
+
+
+      
+    }
+
+
+
+    function addEmployeeInfoToPDF(tempContainer, colaborador) {
+
+      
+      // Linha para assinatura
+      var signatureLine = document.createElement("p");
+      signatureLine.innerText = "______________________________"; // Pode usar underline ou outra representação gráfica
+      tempContainer.appendChild(signatureLine);
+
+      // Informações do colaborador
+      var employeeName = document.createElement("h3");
+      employeeName.innerText = ` ${colaborador.nome}`; // Nome do colaborador
+      employeeName.style.fontSize ="13px"
+      tempContainer.appendChild(employeeName);
+
+      var cpf = document.createElement("h3");
+      cpf.innerText = `CPF: ${colaborador.cpf}`; // CPF do colaborador
+      cpf.style.fontSize = "13px"
+      tempContainer.appendChild(cpf);
+    }
+
     function generatePDF() {
-    var employeeSelect = document.getElementById("employee-select");
-    var employeeId = employeeSelect.value;
-    var employee = getEmployeeById(employeeId);
-    var reportContainer = document.getElementById("employee-report");
-    var reportHTML = reportContainer.innerHTML;
+      const selectedEmployeeId = document.getElementById("employee-select").value;
 
-    if (employee) {
-      var opt = {
-        margin: 0.5,
-        filename: employee.name + "_cartao_ponto.pdf",
-        image: { type: 'jpeg', quality: 1 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-      };
+      if (selectedEmployeeId) {
+        const employeeInfo = buscarColaborador(selectedEmployeeId);
+        if (employeeInfo) {
+          const opt = {
+            margin: 10,
+            filename: `.${employeeInfo.nome}.pdf`, // Nome do arquivo com o nome do colaborador
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+          };
 
-      html2pdf().set(opt).from(reportHTML).save();
+          // Criação do elemento temporário para armazenar as informações e o relatório
+          var tempContainer = document.createElement("div");
+
+          // Adiciona as informações da empresa
+          addInfoToPDF(tempContainer);
+
+          // Adiciona o relatório de funcionários com fonte de tamanho 13px
+          var reportContainer = document.getElementById("employee-report");
+          if (reportContainer) {
+            var reportContent = document.createElement("div");
+            reportContent.innerHTML = reportContainer.innerHTML;
+            reportContent.style.fontSize = "10px";
+            reportContent.style.textAlign = "center";
+            reportContent.style.fontFamily = "Courier New', Courier, monospace";
+            tempContainer.appendChild(reportContent);
+          } else {
+            alert("A div 'employee-report' não foi encontrada.");
+            return;
+          }
+
+          // Gera o PDF com as informações combinadas (empresa + relatório)
+          html2pdf().from(tempContainer).set(opt).then(function () {
+            // Adiciona as informações do colaborador no fim do PDF
+            addEmployeeInfoToPDF(tempContainer, employeeInfo);
+
+            // Gera novamente o PDF com as informações do colaborador adicionadas
+            html2pdf().from(tempContainer).set(opt).save();
+          });
+        }
+      }
+    }
+    // Função para abrir o modal de edição
+     function openEditModal(event) {
+    var date = event.target.getAttribute("data-date");
+    var employeeId = event.target.getAttribute("data-employeeId");
+
+    // Preenche os dados do modal com as informações atuais de entrada/saída do ponto
+    document.getElementById("edit-date").textContent = date;
+    document.getElementById("edit-employeeId").textContent = employeeId;
+
+    var punchesFiltered = punches.filter(function (punch) {
+      return punch.date === date && punch.employeeId === employeeId;
+    });
+
+    var entryMorning = punchesFiltered.find(function (punch) {
+      return punch.punchType === "entrada_manha";
+    });
+
+    var exitMorning = punchesFiltered.find(function (punch) {
+      return punch.punchType === "saida_manha";
+    });
+
+    var entryAfternoon = punchesFiltered.find(function (punch) {
+      return punch.punchType === "entrada_tarde";
+    });
+
+    var exitAfternoon = punchesFiltered.find(function (punch) {
+      return punch.punchType === "saida_tarde";
+    });
+
+    document.getElementById("edit-entryMorning").value = entryMorning ? entryMorning.time : "";
+    document.getElementById("edit-exitMorning").value = exitMorning ? exitMorning.time : "";
+    document.getElementById("edit-entryAfternoon").value = entryAfternoon ? entryAfternoon.time : "";
+    document.getElementById("edit-exitAfternoon").value = exitAfternoon ? exitAfternoon.time : "";
+
+    // Mostra o modal
+    var modal = document.getElementById("edit-modal");
+    modal.style.display = "block";
+  }
+
+  // Function to close the edit modal
+  function closeEditModal() {
+    // Oculta o modal
+    var modal = document.getElementById("edit-modal");
+    modal.style.display = "none";
+  }
+
+  // Function to save the edits made in the modal
+  function saveEdit() {
+    // Get the date and employee ID from the modal
+    var date = document.getElementById("edit-date").textContent;
+    var employeeId = document.getElementById("edit-employeeId").textContent;
+    var entryMorning = document.getElementById("edit-entryMorning").value;
+    var exitMorning = document.getElementById("edit-exitMorning").value;
+    var entryAfternoon = document.getElementById("edit-entryAfternoon").value;
+    var exitAfternoon = document.getElementById("edit-exitAfternoon").value;
+
+    // Ask for the password when the user clicks the "Save" button in the modal
+    var enteredPassword = prompt("Digite sua senha:");
+
+    // Replace this with the actual correct password
+    var correctPassword = "rte304"; // Change this to the correct password
+
+    // Check if the entered password matches the correct password
+    if (enteredPassword === correctPassword) {
+      // Find the records corresponding to the date and employee ID in the "punches" array
+      punches.forEach(function (punch) {
+        if (punch.date === date && punch.employeeId === employeeId) {
+          if (punch.punchType === "entrada_manha") {
+            punch.time = entryMorning !== "" ? entryMorning : "";
+          } else if (punch.punchType === "saida_manha") {
+            punch.time = exitMorning !== "" ? exitMorning : "";
+          } else if (punch.punchType === "entrada_tarde") {
+            punch.time = entryAfternoon !== "" ? entryAfternoon : "";
+          } else if (punch.punchType === "saida_tarde") {
+            punch.time = exitAfternoon !== "" ? exitAfternoon : "";
+          }
+        }
+      });
+
+      // Save the modified punches array to the local storage
+      localStorage.setItem("punches", JSON.stringify(punches));
+
+      // Close the modal after saving the edits
+      closeEditModal();
+
+      // Update the report after saving the edits
+      generateReport();
     } else {
-      alert("Selecione um colaborador para gerar o relatório.");
+      // If the password is incorrect, show an error message or handle it as you wish
+      alert("Senha Incorreta");
     }
   }
 
-  generateReport();
-    
+
+ function registerAutoPunch() {
+    var today = new Date();
+    var dayOfWeek = today.getDay(); // Sunday is 0, Saturday is 6
+
+    if (dayOfWeek === 0) { // Sunday (0)
+      showCheckmark("Domingo");
+      registerNonWorkingDay("Domingo");
+      generateReport();
+    } else if (dayOfWeek === 6) { // Saturday (6)
+      showCheckmark("Sábado");
+      registerNonWorkingDay("Sábado");
+      generateReport();
+    } else {
+      var employeeSelect = document.getElementById("employee-select");
+      var selectedEmployeeId = employeeSelect.value;
+
+      if (selectedEmployeeId) {
+        var employee = getEmployeeById(selectedEmployeeId);
+        if (employee) {
+          var date = today.toLocaleDateString();
+          var time = today.toLocaleTimeString();
+
+          var punchType = getPunchType(time, selectedEmployeeId);
+          var lastPunch = getLastPunch(selectedEmployeeId);
+
+          if (!lastPunch || lastPunch.date !== date || lastPunch.punchType !== punchType) {
+            // Register the actual punch for weekdays
+            punches.push({
+              employeeId: selectedEmployeeId,
+              employeeName: employee.name,
+              date: date,
+              time: time,
+              punchType: punchType
+            });
+
+            localStorage.setItem("punches", JSON.stringify(punches));
+            showCheckmark(employee.name);
+            generateReport();
+          }
+        }
+      }
+    }
+  }
+
+  function registerNonWorkingDay(dayOfWeek) {
+    var employeeSelect = document.getElementById("employee-select");
+    var selectedEmployeeId = employeeSelect.value;
+
+    if (selectedEmployeeId) {
+      var employee = getEmployeeById(selectedEmployeeId);
+      if (employee) {
+        var date = new Date().toLocaleDateString();
+        var punchesToday = punches.filter(p => p.employeeId === selectedEmployeeId && p.date === date);
+
+        if (punchesToday.length === 0) {
+          // Register "00:00" punches for non-working days
+          punches.push({
+            employeeId: selectedEmployeeId,
+            employeeName: employee.name,
+            date: date,
+            time: "00:00",
+            punchType: dayOfWeek
+          });
+
+          localStorage.setItem("punches", JSON.stringify(punches));
+        }
+      }
+    }
+  }
+
+
   </script>
+
+
+
+</script>
+
+
 </body>
+
 </html>
