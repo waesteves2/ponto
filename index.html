@@ -751,7 +751,7 @@
           if (reportContainer) {
             var reportContent = document.createElement("div");
             reportContent.innerHTML = reportContainer.innerHTML;
-            reportContent.style.fontSize = "11px";
+            reportContent.style.fontSize = "10px";
             reportContent.style.textAlign = "center";
             reportContent.style.fontFamily = "Courier New', Courier, monospace";
             tempContainer.appendChild(reportContent);
@@ -934,49 +934,6 @@
       }
     }
   }
-
-function formatCell(cellValue, isWeekendOrHoliday) {
-  if (isWeekendOrHoliday) {
-    // Formatação para sábado, domingo e feriados
-    var hours = Math.floor(cellValue / 3600);
-    var minutes = Math.floor((cellValue % 3600) / 60);
-    var seconds = cellValue % 60;
-    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-  } else {
-    // Formatação para os demais dias
-    var date = new Date(cellValue * 1000);
-    var day = String(date.getDate()).padStart(2, '0');
-    var month = String(date.getMonth() + 1).padStart(2, '0');
-    var year = String(date.getFullYear()).slice(-2);
-    return `${day}/${month}/${year}`;
-  }
-}
-
-function addCellToRow(row, cellValue, isWeekendOrHoliday) {
-  var cell = document.createElement("td");
-  cell.textContent = formatCell(cellValue, isWeekendOrHoliday);
-  row.appendChild(cell);
-}
-
-function generateReportTable() {
-  // Restante do código...
-
-  for (var i = 0; i < employeeData.length; i++) {
-    var row = document.createElement("tr");
-    addCellToRow(row, i + 1); // Número da linha
-    addCellToRow(row, employeeData[i].name); // Nome do colaborador
-
-    // Demais células representando as horas trabalhadas e ausentes para cada dia
-    for (var j = 0; j < days.length; j++) {
-      var cellValue = employeeData[i].hours[days[j]];
-      var isWeekendOrHoliday = days[j] === "Sabado" || days[j] === "Domingo" || isHoliday(day, month, year);
-      addCellToRow(row, cellValue, isWeekendOrHoliday);
-    }
-
-    tableBody.appendChild(row);
-  }
-}
-
 
 
   </script>
