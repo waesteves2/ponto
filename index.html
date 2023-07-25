@@ -587,21 +587,19 @@ function generateReport() {
         totalHoursCell.textContent = secondsToTimeString(totalSeconds);
         extraHoursCell.textContent = extraSeconds > 0 ? secondsToTimeString(extraSeconds) : "00:00:00";
 
-        if (currentDate.day() === 0 || currentDate.day() === 6) {
-          // If the day is Sunday (0) or Saturday (6), set "00:00:00" for absent hours
-          absentHoursCell.textContent = "00:00:00";
-          absentHoursCell.classList.add("absent");
-        } else {
-          // Calculate absent hours for morning and afternoon separately
-          var absentSeconds = expectedWorkingHours - totalSeconds;
+        // Calculate absent hours for morning and afternoon separately
+        var absentSeconds = expectedWorkingHours - totalSeconds;
 
-          if (absentSeconds > 0) {
-            absentHoursCell.textContent = secondsToTimeString(absentSeconds);
-            absentHoursCell.classList.add("absent");
-          } else {
-            absentHoursCell.textContent = "00:00:00";
-            absentHoursCell.classList.remove("absent");
-          }
+        if (currentDate.day() === 0 || currentDate.day() === 6) {
+          // Saturday (0) or Sunday (6)
+          absentHoursCell.textContent = "00:00:00"; // Force "00:00:00" on weekends
+        } else {
+          absentHoursCell.textContent = absentSeconds > 0 ? secondsToTimeString(absentSeconds) : "00:00:00";
+          absentHoursCell.classList.toggle("absent", absentSeconds > 0); // Add or remove "absent" class based on whether there are absent hours
+        }
+
+        if (currentDate.day() === 0 || currentDate.day() === 6) {
+          row.classList.add("day-of-week"); // Apply the red color to Saturdays (6) and Sundays (0)
         }
 
         row.appendChild(dateCell);
@@ -624,6 +622,7 @@ function generateReport() {
     employeeReport.appendChild(table);
   }
 }
+
 
     function secondsToTimeString(totalSeconds) {
       var hours = Math.floor(totalSeconds / 3600);
